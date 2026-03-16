@@ -116,7 +116,14 @@ export class RelicEditor {
 
         itemBrowser.open('relic', {
             characterColor: poolFilter,
+            keepOpenOnSelect: true,
             onSelect: (relicData) => {
+                if (this.player.relics.length >= SAFE_LIMITS.relics) {
+                    showToast(`Relics at safe limit (${SAFE_LIMITS.relics})`, 'warning');
+                    itemBrowser.close();
+                    return;
+                }
+
                 const floor = this.saveManager.getCurrentFloor();
                 const newRelic = {
                     floor_added_to_deck: floor,
@@ -125,6 +132,11 @@ export class RelicEditor {
                 this.player.relics.push(newRelic);
                 this.refresh();
                 showToast(`Added ${relicData.name}`, 'success');
+
+                if (this.player.relics.length >= SAFE_LIMITS.relics) {
+                    showToast(`Relics reached safe limit (${SAFE_LIMITS.relics})`, 'info');
+                    itemBrowser.close();
+                }
             }
         });
     }

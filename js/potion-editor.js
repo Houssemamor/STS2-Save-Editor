@@ -126,7 +126,16 @@ export class PotionEditor {
 
         itemBrowser.open('potion', {
             characterColor: poolFilter,
+            keepOpenOnSelect: true,
             onSelect: (potionData) => {
+                const maxPotionSlots = this.player.max_potion_slot_count || 3;
+                const potionLimit = Math.min(SAFE_LIMITS.potions, maxPotionSlots);
+                if (this.player.potions.length >= potionLimit) {
+                    showToast(`Potions at limit (${potionLimit})`, 'warning');
+                    itemBrowser.close();
+                    return;
+                }
+
                 const newPotion = {
                     id: addPrefix(potionData.id, 'potion'),
                     slot_index: this.getNextSlotIndex()
@@ -134,6 +143,11 @@ export class PotionEditor {
                 this.player.potions.push(newPotion);
                 this.refresh();
                 showToast(`Added ${potionData.name}`, 'success');
+
+                if (this.player.potions.length >= potionLimit) {
+                    showToast(`Potions reached limit (${potionLimit})`, 'info');
+                    itemBrowser.close();
+                }
             }
         });
     }

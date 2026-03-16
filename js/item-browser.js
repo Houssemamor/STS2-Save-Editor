@@ -23,6 +23,7 @@ class ItemBrowser {
         this.displayed = 0;
         this.onSelect = null;
         this.characterColor = null;
+        this.keepOpenOnSelect = false;
 
         this.closeBtn.addEventListener('click', () => this.close());
         this.modal.addEventListener('click', (e) => {
@@ -43,10 +44,11 @@ class ItemBrowser {
         });
     }
 
-    open(mode, { characterColor, onSelect }) {
+    open(mode, { characterColor, onSelect, keepOpenOnSelect = false }) {
         this.mode = mode;
         this.onSelect = onSelect;
         this.characterColor = characterColor;
+        this.keepOpenOnSelect = keepOpenOnSelect;
 
         this.searchInput.value = '';
 
@@ -78,6 +80,7 @@ class ItemBrowser {
         this.modal.classList.remove('visible');
         this.tooltip.classList.remove('visible');
         this.onSelect = null;
+        this.keepOpenOnSelect = false;
     }
 
     populateFilters() {
@@ -248,7 +251,9 @@ class ItemBrowser {
             if (this.onSelect) {
                 this.onSelect(item);
             }
-            this.close();
+            if (!this.keepOpenOnSelect) {
+                this.close();
+            }
         });
 
         el.addEventListener('mouseenter', () => {

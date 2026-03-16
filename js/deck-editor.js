@@ -55,11 +55,13 @@ export class DeckEditor {
         const list = document.createElement('div');
         list.className = 'item-list deck-list';
 
-        if (this.player.deck.length === 0) {
+        const deckGroups = this.getDeckGroups();
+
+        if (deckGroups.length === 0) {
             list.innerHTML = '<div class="empty-state">No cards in deck</div>';
         } else {
-            this.player.deck.forEach((card, i) => {
-                list.appendChild(this.createCardEntry(card, i));
+            deckGroups.forEach(group => {
+                list.appendChild(this.createCardEntry(group));
             });
         }
 
@@ -72,17 +74,117 @@ export class DeckEditor {
         this.headerEl = header;
     }
 
-    createCardEntry(card, index) {
+    getDeckGroups() {
+        const groups = new Map();
+
+        this.player.deck.forEach((card, index) => {
+            const key = this.getCardGroupKey(card);
+            if (!groups.has(key)) {
+                groups.set(key, {
+                    key,
+                    cards: [],
+                    indices: []
+                });
+            }
+
+            const group = groups.get(key);
+            group.cards.push(card);
+            group.indices.push(index);
+        });
+
+        return Array.from(groups.values());
+    }
+
+    getCardGroupKey(card) {
+        const normalizedProps = this.normalizeObject(card.props || null);
+        const upgradeLevel = card.current_upgrade_level || 0;
+        return `${card.id}|${upgradeLevel}|${JSON.stringify(normalizedProps)}`;
+    }
+
+    normalizeObject(value) {
+        if (Array.isArray(value)) {
+            return value.map(item => this.normalizeObject(item));
+        }
+
+        if (value && typeof value === 'object') {
+            const normalized = {};
+            Object.keys(value)
+                .sort()
+                .forEach(key => {
+                    normalized[key] = this.normalizeObject(value[key]);
+                });
+            return normalized;
+        }
+
+        return value;
+    }
+
+    addCardFromGroup(group) {
+        if (this.player.deck.length >= SAFE_LIMITS.deck) {
+            showToast(`Deck is at the safe limit (${SAFE_LIMITS.deck})`, 'warning');
+            return;
+        }
+
+        // Clone the card shape so card flags (upgrade/props) are preserved for the new copy.
+        const source = group.cards[0];
+        const clonedCard = JSON.parse(JSON.stringify(source));
+        this.player.deck.push(clonedCard);
+        this.refresh();
+
+        const dataId = stripPrefix(source.id, 'card');
+        const cardData = dataStore.getCard(dataId);
+        const name = cardData ? cardData.name : source.id;
+        showToast(`Added ${name}`, 'success');
+    }
+
+    removeCardFromGroup(group) {
+        if (group.indices.length === 0) return;
+
+        const removeIndex = group.indices[group.indices.length - 1];
+        const card = this.player.deck[removeIndex];
         const dataId = stripPrefix(card.id, 'card');
+        const cardData = dataStore.getCard(dataId);
+        const name = cardData ? cardData.name : card.id;
+
+        this.player.deck.splice(removeIndex, 1);
+        this.refresh();
+        showToast(`Removed ${name}`, 'info');
+    }
+
+    toggleUpgradeGroup(group, shouldUpgrade) {
+        let changed = 0;
+
+        group.indices.forEach(index => {
+            const card = this.player.deck[index];
+            if (!card) return;
+
+            if (shouldUpgrade) {
+                if ((card.current_upgrade_level || 0) === 0) {
+                    card.current_upgrade_level = 1;
+                    changed++;
+                }
+            } else if ((card.current_upgrade_level || 0) > 0) {
+                delete card.current_upgrade_level;
+                changed++;
+            }
+        });
+
+        if (changed > 0) this.refresh();
+    }
+
+    createCardEntry(group) {
+        const sample = group.cards[0];
+        const quantity = group.cards.length;
+        const dataId = stripPrefix(sample.id, 'card');
         const cardData = dataStore.getCard(dataId);
 
         const entry = document.createElement('div');
         entry.className = 'item-entry';
 
         const imgUrl = cardData ? resolveImageUrl(cardData.image_url) : null;
-        const name = cardData ? cardData.name : card.id;
-        const isUpgraded = (card.current_upgrade_level || 0) > 0;
-        const hasProps = card.props && Object.keys(card.props).length > 0;
+        const name = cardData ? cardData.name : sample.id;
+        const isUpgraded = (sample.current_upgrade_level || 0) > 0;
+        const hasProps = sample.props && Object.keys(sample.props).length > 0;
         const hasUpgradeData = cardData && cardData.upgrade && Object.keys(cardData.upgrade).length > 0;
 
         let metaHtml = '';
@@ -90,7 +192,7 @@ export class DeckEditor {
             const badges = [];
             if (cardData.type) badges.push(`<span class="badge badge-type">${cardData.type}</span>`);
             if (cardData.rarity) badges.push(`<span class="badge badge-rarity-${cardData.rarity.toLowerCase()}">${cardData.rarity}</span>`);
-            if (isUpgraded) badges.push(`<span class="badge badge-upgraded">+${card.current_upgrade_level}</span>`);
+            if (isUpgraded) badges.push(`<span class="badge badge-upgraded">+${sample.current_upgrade_level}</span>`);
             if (hasProps) badges.push(`<span class="badge badge-props">props</span>`);
             metaHtml = badges.join(' ');
         } else {
@@ -102,6 +204,11 @@ export class DeckEditor {
             <div class="item-info">
                 <div class="item-name">${name}${isUpgraded ? '+' : ''}</div>
                 <div class="item-meta">${metaHtml}</div>
+            </div>
+            <div class="deck-stack-controls">
+                <button class="btn-stack-qty" data-action="subtract" title="Remove one copy">-</button>
+                <span class="deck-stack-count" title="Number of copies">x${quantity}</span>
+                <button class="btn-stack-qty" data-action="add" title="Add one copy"${this.player.deck.length >= SAFE_LIMITS.deck ? ' disabled' : ''}>+</button>
             </div>
         `;
 
@@ -115,27 +222,16 @@ export class DeckEditor {
             upgradeBtn.className = `btn-upgrade${isUpgraded ? ' upgraded' : ''}`;
             upgradeBtn.textContent = isUpgraded ? 'Downgrade' : 'Upgrade';
             upgradeBtn.addEventListener('click', () => {
-                if (isUpgraded) {
-                    delete card.current_upgrade_level;
-                } else {
-                    card.current_upgrade_level = 1;
-                }
-                this.refresh();
+                this.toggleUpgradeGroup(group, !isUpgraded);
             });
             entry.appendChild(upgradeBtn);
         }
 
-        // Remove button
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'btn btn-danger';
-        removeBtn.textContent = '\u00D7';
-        removeBtn.title = 'Remove card';
-        removeBtn.addEventListener('click', () => {
-            this.player.deck.splice(index, 1);
-            this.refresh();
-            showToast(`Removed ${name}`, 'info');
-        });
-        entry.appendChild(removeBtn);
+        const subtractBtn = entry.querySelector('[data-action="subtract"]');
+        const addBtn = entry.querySelector('[data-action="add"]');
+
+        subtractBtn.addEventListener('click', () => this.removeCardFromGroup(group));
+        addBtn.addEventListener('click', () => this.addCardFromGroup(group));
 
         return entry;
     }
@@ -179,7 +275,14 @@ export class DeckEditor {
 
         itemBrowser.open('card', {
             characterColor: this.characterColor,
+            keepOpenOnSelect: true,
             onSelect: (cardData) => {
+                if (this.player.deck.length >= SAFE_LIMITS.deck) {
+                    showToast(`Deck is at the safe limit (${SAFE_LIMITS.deck})`, 'warning');
+                    itemBrowser.close();
+                    return;
+                }
+
                 const floor = this.saveManager.getCurrentFloor();
                 const newCard = {
                     floor_added_to_deck: floor,
@@ -188,6 +291,11 @@ export class DeckEditor {
                 this.player.deck.push(newCard);
                 this.refresh();
                 showToast(`Added ${cardData.name}`, 'success');
+
+                if (this.player.deck.length >= SAFE_LIMITS.deck) {
+                    showToast(`Deck reached safe limit (${SAFE_LIMITS.deck})`, 'info');
+                    itemBrowser.close();
+                }
             }
         });
     }
