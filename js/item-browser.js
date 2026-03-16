@@ -83,6 +83,39 @@ class ItemBrowser {
         this.keepOpenOnSelect = false;
     }
 
+    normalizeColorOrPoolValue(value) {
+        if (value === null || value === undefined) return '';
+
+        const normalized = String(value).trim().toLowerCase();
+        const aliases = {
+            blue: 'defect',
+            red: 'ironclad',
+            green: 'silent',
+            orange: 'regent',
+            purple: 'necrobinder'
+        };
+
+        return aliases[normalized] || normalized;
+    }
+
+    setSelectToExistingValueOrDefault(selectEl, preferredValue) {
+        const normalizedPreferred = this.normalizeColorOrPoolValue(preferredValue);
+
+        if (normalizedPreferred) {
+            const matchingOption = Array.from(selectEl.options).find(
+                opt => String(opt.value).toLowerCase() === normalizedPreferred
+            );
+
+            if (matchingOption) {
+                selectEl.value = matchingOption.value;
+                return;
+            }
+        }
+
+        // Always keep a valid visual selection to avoid an empty-looking dropdown.
+        selectEl.selectedIndex = 0;
+    }
+
     populateFilters() {
         // Color / Pool filter
         this.colorSelect.innerHTML = '<option value="">All</option>';
@@ -96,10 +129,7 @@ class ItemBrowser {
                 opt.textContent = COLOR_DISPLAY_NAMES[c] || c;
                 this.colorSelect.appendChild(opt);
             });
-            // Default to character color if available
-            if (this.characterColor) {
-                this.colorSelect.value = this.characterColor;
-            }
+            this.setSelectToExistingValueOrDefault(this.colorSelect, this.characterColor);
         } else {
             const pools = [...new Set(this.allItems.map(i => i.pool).filter(Boolean))].sort();
             this.colorSelect.querySelector('option').textContent = 'All Pools';
@@ -109,6 +139,7 @@ class ItemBrowser {
                 opt.textContent = COLOR_DISPLAY_NAMES[p] || p;
                 this.colorSelect.appendChild(opt);
             });
+            this.colorSelect.selectedIndex = 0;
         }
 
         // Rarity filter
@@ -120,6 +151,7 @@ class ItemBrowser {
             opt.textContent = r;
             this.raritySelect.appendChild(opt);
         });
+        this.raritySelect.selectedIndex = 0;
 
         // Type filter (cards only)
         if (this.mode === 'card') {
@@ -131,6 +163,7 @@ class ItemBrowser {
                 opt.textContent = t;
                 this.typeSelect.appendChild(opt);
             });
+            this.typeSelect.selectedIndex = 0;
 
             // Cost filter
             this.costSelect.innerHTML = '<option value="">All Costs</option>';
@@ -148,6 +181,7 @@ class ItemBrowser {
                 opt.textContent = 'X Cost';
                 this.costSelect.appendChild(opt);
             }
+            this.costSelect.selectedIndex = 0;
         }
     }
 
