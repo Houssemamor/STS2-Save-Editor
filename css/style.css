@@ -368,6 +368,55 @@ body {
     color: var(--accent-red);
 }
 
+.section-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-upgrade-all {
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    background: rgba(200, 168, 78, 0.1);
+    border: 1px solid var(--accent-gold-dim);
+    color: var(--accent-gold);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-upgrade-all:hover:not(:disabled) {
+    background: rgba(200, 168, 78, 0.25);
+    border-color: var(--accent-gold);
+}
+
+.btn-upgrade-all:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.btn-downgrade-all {
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    background: rgba(200, 168, 78, 0.15);
+    border: 1px solid var(--accent-gold);
+    color: var(--accent-gold);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.btn-downgrade-all:hover:not(:disabled) {
+    background: rgba(200, 168, 78, 0.05);
+    border-color: var(--accent-gold-dim);
+    color: var(--accent-gold-dim);
+}
+
+.btn-downgrade-all:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
 /* ── Item List (shared for deck/relics/potions) ── */
 .item-list {
     max-height: 500px;

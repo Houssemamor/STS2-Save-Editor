@@ -70,3 +70,97 @@ export function getCurrentFloor(save) {
     }
     return 1;
 }
+
+export function getCardDescription(cardData, upgraded) {
+    if (!cardData) return '';
+
+    // Start with rendered description
+    let desc = cardData.description || '';
+
+    if (upgraded && cardData.upgrade && cardData.vars) {
+        // Build upgraded vars
+        const upgradedVars = { ...cardData.vars };
+        for (const [key, delta] of Object.entries(cardData.upgrade)) {
+            if (key === 'cost') continue;
+            // Find matching var (upgrade keys are lowercase, vars may differ in case)
+            const varKey = Object.keys(upgradedVars).find(k => k.toLowerCase() === key.toLowerCase());
+            if (varKey !== undefined) {
+                const deltaStr = String(delta);
+                if (deltaStr.startsWith('+')) {
+                    upgradedVars[varKey] += parseInt(deltaStr.slice(1), 10);
+                } else if (deltaStr.startsWith('-')) {
+                    upgradedVars[varKey] += parseInt(deltaStr, 10);
+                } else {
+                    upgradedVars[varKey] = parseInt(deltaStr, 10);
+                }
+            }
+        }
+
+        // Rebuild description from description_raw by substituting vars
+        if (cardData.description_raw) {
+            desc = cardData.description_raw
+                .replace(/\{(\w+):diff\(\)\}/g, (_, name) => {
+                    const val = upgradedVars[name];
+                    return val !== undefined ? val : '?';
+                })
+                .replace(/\{(\w+):plural:(\w+)\|(\w+)\}/g, (_, name, singular, plural) => {
+                    const val = upgradedVars[name];
+                    return val === 1 ? singular : plural;
+                })
+                .replace(/\{(\w+):energyIcons\(\)\}/g, (_, name) => {
+                    const val = upgradedVars[name];
+                    return val !== undefined ? `[energy:${val}]` : '?';
+                })
+                .replace(/\{(\w+):starIcons\(\)\}/g, (_, name) => {
+                    const val = upgradedVars[name];
+                    return val !== undefined ? `[star:${val}]` : '?';
+                })
+                .replace(/\{(\w+)\}/g, (_, name) => {
+                    const val = upgradedVars[name];
+                    return val !== undefined ? val : '?';
+                });
+        } else {
+            // No raw template — replace numeric values in the rendered description
+            // This is a rough fallback
+            for (const [key, delta] of Object.entries(cardData.upgrade)) {
+                if (key === 'cost') continue;
+                const varKey = Object.keys(cardData.vars).find(k => k.toLowerCase() === key.toLowerCase());
+                if (varKey !== undefined) {
+                    const oldVal = cardData.vars[varKey];
+                    const newVal = upgradedVars[varKey];
+                    desc = desc.replace(new RegExp(`\\b${oldVal}\\b`), String(newVal));
+                }
+            }
+        }
+
+        // Show cost change
+        if (cardData.upgrade.cost !== undefined) {
+            desc += `<br><span class="sts-green">Cost: ${cardData.upgrade.cost}</span>`;
+        }
+    }
+
+    return formatDescription(desc);
+}
+
+// Shared tooltip for item entries (deck/relic/potion lists)
+const entryTooltip = () => document.getElementById('browser-tooltip');
+
+export function bindEntryTooltip(el, htmlContent) {
+    el.addEventListener('mouseenter', () => {
+        const tip = entryTooltip();
+        if (!tip || !htmlContent) return;
+        tip.innerHTML = htmlContent;
+        tip.classList.add('visible');
+        const rect = el.getBoundingClientRect();
+        let top = rect.top - tip.offsetHeight - 6;
+        if (top < 0) top = rect.bottom + 6;
+        let left = rect.left + rect.width / 2 - 140;
+        left = Math.max(4, Math.min(left, window.innerWidth - 284));
+        tip.style.top = top + 'px';
+        tip.style.left = left + 'px';
+    });
+    el.addEventListener('mouseleave', () => {
+        const tip = entryTooltip();
+        if (tip) tip.classList.remove('visible');
+    });
+}

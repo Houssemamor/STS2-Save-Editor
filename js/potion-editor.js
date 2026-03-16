@@ -1,6 +1,6 @@
 import { dataStore } from './data-store.js';
 import { SAFE_LIMITS, addPrefix, stripPrefix } from './constants.js';
-import { resolveImageUrl, showToast } from './utils.js';
+import { resolveImageUrl, showToast, formatDescription, bindEntryTooltip } from './utils.js';
 import { itemBrowser } from './item-browser.js';
 
 export class PotionEditor {
@@ -84,6 +84,11 @@ export class PotionEditor {
                 <div class="item-meta">${metaHtml}</div>
             </div>
         `;
+
+        // Tooltip with description
+        if (potionData && potionData.description) {
+            bindEntryTooltip(entry, formatDescription(potionData.description));
+        }
 
         const removeBtn = document.createElement('button');
         removeBtn.className = 'btn btn-danger';

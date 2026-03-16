@@ -1,6 +1,6 @@
 import { dataStore } from './data-store.js';
 import { SAFE_LIMITS, addPrefix, stripPrefix } from './constants.js';
-import { resolveImageUrl, showToast } from './utils.js';
+import { resolveImageUrl, showToast, getCardDescription, bindEntryTooltip } from './utils.js';
 import { itemBrowser } from './item-browser.js';
 
 export class DeckEditor {
@@ -31,12 +31,26 @@ export class DeckEditor {
         const limit = SAFE_LIMITS.deck;
         const countClass = count >= limit ? 'count at-limit' : 'count';
 
+        const allUpgradeable = this.player.deck.filter(card => {
+            const dataId = stripPrefix(card.id, 'card');
+            const cd = dataStore.getCard(dataId);
+            return cd && cd.upgrade && Object.keys(cd.upgrade).length > 0;
+        });
+        const allUpgraded = allUpgradeable.length > 0 && allUpgradeable.every(c => (c.current_upgrade_level || 0) > 0);
+        const anyUpgraded = allUpgradeable.some(c => (c.current_upgrade_level || 0) > 0);
+
         header.innerHTML = `
             <h3>Deck <span class="${countClass}">(${count}/${limit})</span></h3>
-            <button class="btn btn-add">+ Add Card</button>
+            <div class="section-actions">
+                <button class="btn btn-upgrade-all"${allUpgradeable.length === 0 || allUpgraded ? ' disabled' : ''}>Upgrade All</button>
+                <button class="btn btn-downgrade-all"${!anyUpgraded ? ' disabled' : ''}>Downgrade All</button>
+                <button class="btn btn-add">+ Add Card</button>
+            </div>
         `;
 
         header.querySelector('.btn-add').addEventListener('click', () => this.openBrowser());
+        header.querySelector('.btn-upgrade-all').addEventListener('click', () => this.upgradeAll());
+        header.querySelector('.btn-downgrade-all').addEventListener('click', () => this.downgradeAll());
 
         const list = document.createElement('div');
         list.className = 'item-list deck-list';
@@ -91,6 +105,10 @@ export class DeckEditor {
             </div>
         `;
 
+        // Tooltip with description (upgraded if applicable)
+        const desc = getCardDescription(cardData, isUpgraded);
+        if (desc) bindEntryTooltip(entry, desc);
+
         // Upgrade button
         if (hasUpgradeData) {
             const upgradeBtn = document.createElement('button');
@@ -120,6 +138,37 @@ export class DeckEditor {
         entry.appendChild(removeBtn);
 
         return entry;
+    }
+
+    upgradeAll() {
+        let count = 0;
+        this.player.deck.forEach(card => {
+            if ((card.current_upgrade_level || 0) > 0) return;
+            const dataId = stripPrefix(card.id, 'card');
+            const cd = dataStore.getCard(dataId);
+            if (cd && cd.upgrade && Object.keys(cd.upgrade).length > 0) {
+                card.current_upgrade_level = 1;
+                count++;
+            }
+        });
+        if (count > 0) {
+            this.refresh();
+            showToast(`Upgraded ${count} card${count !== 1 ? 's' : ''}`, 'success');
+        }
+    }
+
+    downgradeAll() {
+        let count = 0;
+        this.player.deck.forEach(card => {
+            if ((card.current_upgrade_level || 0) > 0) {
+                delete card.current_upgrade_level;
+                count++;
+            }
+        });
+        if (count > 0) {
+            this.refresh();
+            showToast(`Downgraded ${count} card${count !== 1 ? 's' : ''}`, 'info');
+        }
     }
 
     openBrowser() {
