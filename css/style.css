@@ -728,6 +728,16 @@ body {
     color: #dd88bb;
 }
 
+.sts-energy {
+    color: #ee6655;
+    font-weight: 600;
+}
+
+.sts-star {
+    color: var(--accent-gold);
+    font-weight: 600;
+}
+
 /* ── Toast Notifications ── */
 #toast-container {
     position: fixed;
