@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STS2 Save Editor</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+    <header id="app-header">
+        <h2>Slay the Spire 2 - Save Editor</h2>
+        <h1>v0.99.0</h1>
+        <div id="file-controls">
+            <button class="btn btn-primary" id="btn-upload">Upload .save</button>
+            <input type="file" id="file-input" accept=".save,.json" hidden>
+            <button class="btn" id="btn-download" disabled>Download .save</button>
+            <span id="file-status">No file loaded</span>
+        </div>
+    </header>
+
+    <div id="upload-area">
+        <div id="drop-zone">
+            <div class="upload-icon">&#x1F5C1;</div>
+            <h2>Drop your .save file here</h2>
+            <p class="drop-hint">or click "Upload .save" above</p>
+            <p class="drop-hint">Supports single-player &amp; multiplayer saves</p>
+        </div>
+        <div id="save-path-hint">
+            <p>Save files are typically located at:</p>
+            <code id="save-path-text">%APPDATA%\SlayTheSpire2\steam\&lt;SteamID&gt;\profile1\saves\</code>
+            <button class="btn" id="btn-copy-path" title="Copy path to clipboard">Copy Path</button>
+        </div>
+    </div>
+
+    <main id="editor-main" class="hidden">
+        <div id="schema-warning" class="hidden"></div>
+        <section id="save-info"></section>
+        <nav id="player-tabs"></nav>
+        <div id="player-panels"></div>
+    </main>
+
+    <div id="item-browser-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="browser-title">Add Item</h2>
+                <button class="modal-close" id="browser-close">&times;</button>
+            </div>
+            <div class="browser-filters">
+                <input type="text" id="browser-search" placeholder="Search by name...">
+                <select id="browser-filter-color">
+                    <option value="">All Colors</option>
+                </select>
+                <select id="browser-filter-rarity">
+                    <option value="">All Rarities</option>
+                </select>
+                <select id="browser-filter-type" class="hidden">
+                    <option value="">All Types</option>
+                </select>
+            </div>
+            <div id="browser-grid"></div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+
+</html>
