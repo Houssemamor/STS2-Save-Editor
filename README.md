@@ -1,6 +1,6 @@
-# STS2 Save Editor
+# Slay the Spire 2 Save Editor
 
-A web-based save file editor for Slay the Spire 2. Edit your save files directly in your browser with support for single-player and multiplayer saves.
+A web-based save file editor for **Slay the Spire 2**. Edit your save files directly in your browser with support for single-player and multiplayer saves.
 
 **[Try it online](https://houssemamor.github.io/STS2-Save-Editor/)**
 
@@ -84,4 +84,4 @@ Assets and data files provided by [spire-codex](https://github.com/ptrlrd/spire-
 
 ## License
 
-See LICENSE file for details.
+See [LICENSE](LICENSE) for details.
