@@ -685,13 +685,10 @@ body {
     padding: 12px;
 }
 
-/* ── Browser Tooltip ── */
-.browser-item .tooltip {
+/* ── Browser Tooltip (single shared element, fixed position) ── */
+#browser-tooltip {
     display: none;
-    position: absolute;
-    bottom: 100%;
-    left: 50%;
-    transform: translateX(-50%);
+    position: fixed;
     background: var(--bg-deepest);
     border: 1px solid var(--border-light);
     border-radius: 0;
@@ -699,18 +696,13 @@ body {
     font-size: 0.75rem;
     color: var(--text-primary);
     white-space: normal;
-    max-width: 280px;
-    min-width: 180px;
+    width: 280px;
     z-index: 9999;
     pointer-events: none;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.7);
 }
 
-.browser-item {
-    position: relative;
-}
-
-.browser-item:hover .tooltip {
+#browser-tooltip.visible {
     display: block;
 }
 

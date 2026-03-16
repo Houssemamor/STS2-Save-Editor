@@ -13,7 +13,9 @@ class ItemBrowser {
         this.colorSelect = document.getElementById('browser-filter-color');
         this.raritySelect = document.getElementById('browser-filter-rarity');
         this.typeSelect = document.getElementById('browser-filter-type');
+        this.costSelect = document.getElementById('browser-filter-cost');
         this.closeBtn = document.getElementById('browser-close');
+        this.tooltip = document.getElementById('browser-tooltip');
 
         this.mode = null;
         this.allItems = [];
@@ -32,6 +34,7 @@ class ItemBrowser {
         this.colorSelect.addEventListener('change', () => this.applyFilters());
         this.raritySelect.addEventListener('change', () => this.applyFilters());
         this.typeSelect.addEventListener('change', () => this.applyFilters());
+        this.costSelect.addEventListener('change', () => this.applyFilters());
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.modal.classList.contains('visible')) {
@@ -51,14 +54,17 @@ class ItemBrowser {
             this.titleEl.textContent = 'Add Card';
             this.allItems = dataStore.getAllCards();
             this.typeSelect.classList.remove('hidden');
+            this.costSelect.classList.remove('hidden');
         } else if (mode === 'relic') {
             this.titleEl.textContent = 'Add Relic';
             this.allItems = dataStore.getAllRelics();
             this.typeSelect.classList.add('hidden');
+            this.costSelect.classList.add('hidden');
         } else if (mode === 'potion') {
             this.titleEl.textContent = 'Add Potion';
             this.allItems = dataStore.getAllPotions();
             this.typeSelect.classList.add('hidden');
+            this.costSelect.classList.add('hidden');
         }
 
         this.populateFilters();
@@ -70,6 +76,7 @@ class ItemBrowser {
 
     close() {
         this.modal.classList.remove('visible');
+        this.tooltip.classList.remove('visible');
         this.onSelect = null;
     }
 
@@ -121,6 +128,23 @@ class ItemBrowser {
                 opt.textContent = t;
                 this.typeSelect.appendChild(opt);
             });
+
+            // Cost filter
+            this.costSelect.innerHTML = '<option value="">All Costs</option>';
+            const costs = [...new Set(this.allItems.map(i => i.cost).filter(c => c !== null && c !== undefined))].sort((a, b) => a - b);
+            costs.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c;
+                opt.textContent = c + ' Energy';
+                this.costSelect.appendChild(opt);
+            });
+            // Add X-cost option
+            if (this.allItems.some(i => i.is_x_cost)) {
+                const opt = document.createElement('option');
+                opt.value = 'X';
+                opt.textContent = 'X Cost';
+                this.costSelect.appendChild(opt);
+            }
         }
     }
 
@@ -129,6 +153,7 @@ class ItemBrowser {
         const colorOrPool = this.colorSelect.value;
         const rarity = this.raritySelect.value;
         const type = this.typeSelect.value;
+        const cost = this.costSelect.value;
 
         this.filtered = this.allItems.filter(item => {
             if (search && !item.name.toLowerCase().includes(search) &&
@@ -139,6 +164,13 @@ class ItemBrowser {
             if (this.mode === 'card') {
                 if (colorOrPool && item.color !== colorOrPool) return false;
                 if (type && item.type !== type) return false;
+                if (cost) {
+                    if (cost === 'X') {
+                        if (!item.is_x_cost) return false;
+                    } else {
+                        if (item.cost !== parseInt(cost, 10)) return false;
+                    }
+                }
             } else {
                 if (colorOrPool && item.pool !== colorOrPool) return false;
             }
@@ -210,7 +242,6 @@ class ItemBrowser {
             ${imgUrl ? `<img class="browser-item-img" src="${imgUrl}" alt="${item.name}" loading="lazy">` : ''}
             <div class="browser-item-name">${item.name}</div>
             <div class="browser-item-meta">${metaText}</div>
-            <div class="tooltip">${desc || 'No description'}</div>
         `;
 
         el.addEventListener('click', () => {
@@ -218,6 +249,24 @@ class ItemBrowser {
                 this.onSelect(item);
             }
             this.close();
+        });
+
+        el.addEventListener('mouseenter', () => {
+            this.tooltip.innerHTML = desc || 'No description';
+            const rect = el.getBoundingClientRect();
+            // Try above the item
+            this.tooltip.classList.add('visible');
+            let top = rect.top - this.tooltip.offsetHeight - 6;
+            // If clipped at top, show below
+            if (top < 0) top = rect.bottom + 6;
+            let left = rect.left + rect.width / 2 - 140;
+            left = Math.max(4, Math.min(left, window.innerWidth - 284));
+            this.tooltip.style.top = top + 'px';
+            this.tooltip.style.left = left + 'px';
+        });
+
+        el.addEventListener('mouseleave', () => {
+            this.tooltip.classList.remove('visible');
         });
 
         return el;
