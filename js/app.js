@@ -149,43 +149,18 @@ async function init() {
         lastDirHandle = await loadDirHandle();
     }
 
-    // Upload button — use File System Access API when available
-    uploadBtn.addEventListener('click', async () => {
-        if (hasFileSystemAccess) {
-            try {
-                const file = await openWithFileSystemAccess();
-                if (file) handleFile(file);
-            } catch (err) {
-                if (err.name !== 'AbortError') {
-                    showToast('Failed to open file: ' + err.message, 'error');
-                }
-            }
-        } else {
-            fileInput.click();
-        }
-    });
+    // Upload button — always use standard file input (no AppData restrictions)
+    uploadBtn.addEventListener('click', () => fileInput.click());
 
     fileInput.addEventListener('change', (e) => {
         if (e.target.files.length > 0) {
             handleFile(e.target.files[0]);
         }
+        fileInput.value = '';
     });
 
-    // "Open Save Folder" – click on the drop zone uses directory picker
-    if (hasFileSystemAccess) {
-        dropZone.addEventListener('click', async () => {
-            try {
-                const file = await openSaveDirectory();
-                if (file) handleFile(file);
-            } catch (err) {
-                if (err.name !== 'AbortError') {
-                    showToast('Failed to open folder: ' + err.message, 'error');
-                }
-            }
-        });
-        // Update drop zone text to reflect directory-aware behavior
-        dropZone.querySelector('h2').textContent = 'Drop your .save file here, or click to browse saves folder';
-    }
+    // Drop zone click — open standard file picker
+    dropZone.addEventListener('click', () => fileInput.click());
 
     // Download button
     downloadBtn.addEventListener('click', () => handleDownload());
