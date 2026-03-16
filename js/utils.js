@@ -7,8 +7,8 @@ export function formatDescription(text) {
         .replace(/\[red\](.*?)\[\/red\]/g, '<span class="sts-red">$1</span>')
         .replace(/\[pink\](.*?)\[\/pink\]/g, '<span class="sts-pink">$1</span>')
         .replace(/\[i\](.*?)\[\/i\]/g, '<em>$1</em>')
-        .replace(/\[energy:(\d+)\]/g, '<span class="sts-energy">$1E</span>')
-        .replace(/\[star:(\d+)\]/g, '<span class="sts-star">$1*</span>')
+        .replace(/\[energy:([^\]]+)\]/g, '<span class="sts-energy">$1E</span>')
+        .replace(/\[star:([^\]]+)\]/g, '<span class="sts-star">$1*</span>')
         .replace(/\[.*?\]/g, '')
         .replace(/\n/g, '<br>');
 }
@@ -71,6 +71,87 @@ export function getCurrentFloor(save) {
     return 1;
 }
 
+function applyUpgradeCost(baseCost, upgradeCost) {
+    if (upgradeCost === undefined || upgradeCost === null) return baseCost;
+
+    const costText = String(upgradeCost).trim();
+    if ((costText.startsWith('+') || costText.startsWith('-')) && baseCost !== null && baseCost !== undefined) {
+        const delta = parseInt(costText, 10);
+        if (!isNaN(delta)) return baseCost + delta;
+    }
+
+    const parsed = parseInt(costText, 10);
+    if (!isNaN(parsed)) return parsed;
+
+    return baseCost;
+}
+
+function getCardCostDisplay(cardData, upgraded) {
+    const energyParts = [];
+    const starParts = [];
+
+    if (cardData.is_x_cost) {
+        energyParts.push('[energy:X]');
+    } else if (cardData.cost !== null && cardData.cost !== undefined) {
+        const energyCost = (upgraded && cardData.upgrade)
+            ? applyUpgradeCost(cardData.cost, cardData.upgrade.cost)
+            : cardData.cost;
+        energyParts.push(`[energy:${energyCost}]`);
+    }
+
+    if (cardData.is_x_star_cost) {
+        starParts.push('[star:X]');
+    } else if (cardData.star_cost !== null && cardData.star_cost !== undefined) {
+        starParts.push(`[star:${cardData.star_cost}]`);
+    }
+
+    const allParts = [...energyParts, ...starParts];
+    return allParts.length > 0 ? allParts.join(' + ') : 'Unplayable';
+}
+
+function renderCardDescriptionTemplate(template, vars, upgraded) {
+    return template
+        .replace(/\{IfUpgraded:show:([^{}|]*)(?:\|([^{}]*))?\}/gi, (_, upgradedText, normalText) => {
+            return upgraded ? upgradedText : (normalText || '');
+        })
+        .replace(/\{(\w+):cond:>0\?([^|{}]*)\|([^{}]*)\}/g, (_, name, ifTrue, ifFalse) => {
+            const val = vars[name];
+            if (val === undefined || val === null) return ifFalse || '';
+            return Number(val) > 0 ? ifTrue : ifFalse;
+        })
+        .replace(/\{(\w+):diff\(\)\}/g, (_, name) => {
+            const val = vars[name];
+            return val !== undefined ? val : '?';
+        })
+        .replace(/\{(\w+):inverseDiff\(\)\}/g, (_, name) => {
+            const val = vars[name];
+            if (val === undefined || val === null || isNaN(Number(val))) return '?';
+            return -Number(val);
+        })
+        .replace(/\{(\w+):plural:([^|{}]*)\|\{:diff\(\)\}([^{}]*)\}/g, (_, name, singular, pluralSuffix) => {
+            const val = vars[name];
+            if (val === undefined || val === null) return `?${pluralSuffix}`;
+            return Number(val) === 1 ? singular : `${val}${pluralSuffix}`;
+        })
+        .replace(/\{(\w+):plural:([^|{}]*)\|([^{}]*)\}/g, (_, name, singular, plural) => {
+            const val = vars[name];
+            if (val === undefined || val === null) return plural;
+            return Number(val) === 1 ? singular : plural;
+        })
+        .replace(/\{(\w+):energyIcons\((?:\d+)?\)\}/g, (_, name) => {
+            const val = vars[name];
+            return val !== undefined ? `[energy:${val}]` : '?';
+        })
+        .replace(/\{(\w+):starIcons\((?:\d+)?\)\}/g, (_, name) => {
+            const val = vars[name];
+            return val !== undefined ? `[star:${val}]` : '?';
+        })
+        .replace(/\{(\w+)\}/g, (_, name) => {
+            const val = vars[name];
+            return val !== undefined ? val : '?';
+        });
+}
+
 export function getCardDescription(cardData, upgraded) {
     if (!cardData) return '';
 
@@ -98,27 +179,7 @@ export function getCardDescription(cardData, upgraded) {
 
         // Rebuild description from description_raw by substituting vars
         if (cardData.description_raw) {
-            desc = cardData.description_raw
-                .replace(/\{(\w+):diff\(\)\}/g, (_, name) => {
-                    const val = upgradedVars[name];
-                    return val !== undefined ? val : '?';
-                })
-                .replace(/\{(\w+):plural:(\w+)\|(\w+)\}/g, (_, name, singular, plural) => {
-                    const val = upgradedVars[name];
-                    return val === 1 ? singular : plural;
-                })
-                .replace(/\{(\w+):energyIcons\(\)\}/g, (_, name) => {
-                    const val = upgradedVars[name];
-                    return val !== undefined ? `[energy:${val}]` : '?';
-                })
-                .replace(/\{(\w+):starIcons\(\)\}/g, (_, name) => {
-                    const val = upgradedVars[name];
-                    return val !== undefined ? `[star:${val}]` : '?';
-                })
-                .replace(/\{(\w+)\}/g, (_, name) => {
-                    const val = upgradedVars[name];
-                    return val !== undefined ? val : '?';
-                });
+            desc = renderCardDescriptionTemplate(cardData.description_raw, upgradedVars, upgraded);
         } else {
             // No raw template — replace numeric values in the rendered description
             // This is a rough fallback
@@ -132,14 +193,15 @@ export function getCardDescription(cardData, upgraded) {
                 }
             }
         }
-
-        // Show cost change
-        if (cardData.upgrade.cost !== undefined) {
-            desc += `<br><span class="sts-green">Cost: ${cardData.upgrade.cost}</span>`;
-        }
     }
 
-    return formatDescription(desc);
+    const baseCostDisplay = getCardCostDisplay(cardData, false);
+    const currentCostDisplay = getCardCostDisplay(cardData, upgraded);
+    const costLine = (upgraded && baseCostDisplay !== currentCostDisplay)
+        ? `[gold]Cost[/gold]: ${baseCostDisplay} -> ${currentCostDisplay}`
+        : `[gold]Cost[/gold]: ${currentCostDisplay}`;
+
+    return formatDescription(`${costLine}\n${desc}`);
 }
 
 // Shared tooltip for item entries (deck/relic/potion lists)

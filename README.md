@@ -48,6 +48,26 @@ Common file names:
 2. Open `index.html` in a web browser
 3. No server or build process required
 
+## Run Locally (Scripts)
+
+You can also start a local web server from the project root:
+
+- Windows: `run-local-windows.bat`
+- Linux: `run-local-linux.sh`
+- macOS: `run-local-mac.sh`
+
+Optional port argument:
+
+- Windows: `run-local-windows.bat 8080`
+- Linux: `./run-local-linux.sh 8080`
+- macOS: `./run-local-mac.sh 8080`
+
+For Linux/macOS, make scripts executable once:
+
+```bash
+chmod +x run-local-linux.sh run-local-mac.sh
+```
+
 ## Project Structure
 
 ```

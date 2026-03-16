@@ -301,6 +301,9 @@ export class DeckEditor {
     }
 
     refresh() {
+        const pageScrollY = window.scrollY;
+        const listScrollTop = this.listEl ? this.listEl.scrollTop : 0;
+
         const parent = this.sectionEl.parentNode;
         const next = this.sectionEl.nextSibling;
         this.sectionEl.remove();
@@ -312,6 +315,11 @@ export class DeckEditor {
             parent.insertBefore(this.sectionEl, next);
         } else {
             parent.appendChild(this.sectionEl);
+        }
+
+        window.scrollTo(0, pageScrollY);
+        if (this.listEl) {
+            this.listEl.scrollTop = listScrollTop;
         }
     }
 }
