@@ -28,6 +28,24 @@ export class PlayerEditor {
         this.switchToPlayer(0);
     }
 
+    updateFaviconForPlayer(index) {
+        const player = this.saveManager.getPlayer(index);
+        if (!player || !player.character_id) return;
+
+        const charKey = getCharacterKey(player.character_id);
+        const iconHref = getCharacterIconUrl(charKey);
+
+        let faviconEl = document.querySelector('link[rel="icon"]');
+        if (!faviconEl) {
+            faviconEl = document.createElement('link');
+            faviconEl.setAttribute('rel', 'icon');
+            faviconEl.setAttribute('type', 'image/png');
+            document.head.appendChild(faviconEl);
+        }
+
+        faviconEl.setAttribute('href', iconHref);
+    }
+
     createTab(index, player) {
         const charKey = getCharacterKey(player.character_id);
         const char = dataStore.getCharacterBySaveId(player.character_id);
@@ -157,5 +175,7 @@ export class PlayerEditor {
         this.panelsEl.querySelectorAll('.player-panel').forEach(panel => {
             panel.classList.toggle('active', parseInt(panel.dataset.index) === index);
         });
+
+        this.updateFaviconForPlayer(index);
     }
 }
