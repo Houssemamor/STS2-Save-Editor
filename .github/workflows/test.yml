@@ -20,6 +20,10 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Create package.json for ES modules
+        run: |
+          echo '{"type": "module"}' > package.json
+
       - name: Validate JavaScript syntax
         run: |
           for file in js/*.js; do
@@ -31,7 +35,7 @@ jobs:
         run: |
           for file in data/*.json; do
             echo "Validating $file..."
-            node -e "require('fs').readFileSync('$file', 'utf8')" | jq empty
+            jq empty "$file" || exit 1
           done
 
   test-characters:
@@ -40,11 +44,11 @@ jobs:
     strategy:
       matrix:
         character: [
-          'CHARACTER.IRONCLAD',
-          'CHARACTER.SILENT',
-          'CHARACTER.DEFECT',
-          'CHARACTER.NECROBINDER',
-          'CHARACTER.REGENT'
+          'IRONCLAD',
+          'SILENT',
+          'DEFECT',
+          'NECROBINDER',
+          'REGENT'
         ]
 
     steps:
@@ -56,32 +60,46 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Create package.json for ES modules
+        run: |
+          echo '{"type": "module"}' > package.json
+
       - name: Test character data exists
         run: |
           node -e "
-            const data = require('./data/characters.json');
-            const char = data.find(c => c.id === '${{ matrix.character }}');
-            if (!char) throw new Error('Character not found: ${{ matrix.character }}');
-            console.log('✓ Character found:', char.name);
+            import('./data/characters.json', { assert: { type: 'json' } }).then(m => {
+              const data = m.default;
+              const char = data.find(c => c.id === '${{ matrix.character }}');
+              if (!char) throw new Error('Character not found: ${{ matrix.character }}');
+              console.log('✓ Character found:', char.name);
+            }).catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
           "
 
       - name: Validate character color mapping
         run: |
           node -e "
-            const characters = {
-              'CHARACTER.IRONCLAD': 'ironclad',
-              'CHARACTER.SILENT': 'silent',
-              'CHARACTER.DEFECT': 'defect',
-              'CHARACTER.NECROBINDER': 'necrobinder',
-              'CHARACTER.REGENT': 'regent'
-            };
-            const expected = characters['${{ matrix.character }}'];
-            const data = require('./data/characters.json');
-            const char = data.find(c => c.id === '${{ matrix.character }}');
-            if (char.color !== expected) {
-              throw new Error('Color mismatch: expected ' + expected + ', got ' + char.color);
-            }
-            console.log('✓ Character color valid:', char.color);
+            import('./data/characters.json', { assert: { type: 'json' } }).then(m => {
+              const data = m.default;
+              const colorMap = {
+                'IRONCLAD': 'red',
+                'SILENT': 'green',
+                'DEFECT': 'blue',
+                'NECROBINDER': 'purple',
+                'REGENT': 'orange'
+              };
+              const char = data.find(c => c.id === '${{ matrix.character }}');
+              const expected = colorMap['${{ matrix.character }}'];
+              if (char.color !== expected) {
+                throw new Error('Color mismatch: expected ' + expected + ', got ' + char.color);
+              }
+              console.log('✓ Character color valid:', char.color);
+            }).catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
           "
 
   test-data-integrity:
@@ -97,102 +115,124 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Create package.json for ES modules
+        run: |
+          echo '{"type": "module"}' > package.json
+
       - name: Check cards database
         run: |
           node -e "
-            const data = require('./data/cards.json');
-            console.log('Total cards:', data.length);
-            const colors = [...new Set(data.map(c => c.color))];
-            console.log('Colors:', colors.join(', '));
-            const rarities = [...new Set(data.map(c => c.rarity))];
-            console.log('Rarities:', rarities.join(', '));
-            
-            // Check for duplicates
-            const ids = data.map(c => c.id);
-            const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
-            if (duplicates.length > 0) {
-              throw new Error('Duplicate card IDs: ' + duplicates.join(', '));
-            }
-            console.log('✓ No duplicate card IDs');
+            import('./data/cards.json', { assert: { type: 'json' } }).then(m => {
+              const data = m.default;
+              console.log('Total cards:', data.length);
+              const colors = [...new Set(data.map(c => c.color))];
+              console.log('Colors:', colors.join(', '));
+              const rarities = [...new Set(data.map(c => c.rarity))];
+              console.log('Rarities:', rarities.join(', '));
+              const ids = data.map(c => c.id);
+              const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
+              if (duplicates.length > 0) {
+                throw new Error('Duplicate card IDs: ' + duplicates.join(', '));
+              }
+              console.log('✓ No duplicate card IDs');
+            }).catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
           "
 
       - name: Check relics database
         run: |
           node -e "
-            const data = require('./data/relics.json');
-            console.log('Total relics:', data.length);
-            const pools = [...new Set(data.map(c => c.pool))];
-            console.log('Pools:', pools.join(', '));
-            
-            // Check for duplicates
-            const ids = data.map(c => c.id);
-            const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
-            if (duplicates.length > 0) {
-              throw new Error('Duplicate relic IDs: ' + duplicates.join(', '));
-            }
-            console.log('✓ No duplicate relic IDs');
+            import('./data/relics.json', { assert: { type: 'json' } }).then(m => {
+              const data = m.default;
+              console.log('Total relics:', data.length);
+              const pools = [...new Set(data.map(c => c.pool))];
+              console.log('Pools:', pools.join(', '));
+              const ids = data.map(c => c.id);
+              const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
+              if (duplicates.length > 0) {
+                throw new Error('Duplicate relic IDs: ' + duplicates.join(', '));
+              }
+              console.log('✓ No duplicate relic IDs');
+            }).catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
           "
 
       - name: Check potions database
         run: |
           node -e "
-            const data = require('./data/potions.json');
-            console.log('Total potions:', data.length);
-            const pools = [...new Set(data.map(c => c.pool))];
-            console.log('Pools:', pools.join(', '));
-            
-            // Check for duplicates
-            const ids = data.map(c => c.id);
-            const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
-            if (duplicates.length > 0) {
-              throw new Error('Duplicate potion IDs: ' + duplicates.join(', '));
-            }
-            console.log('✓ No duplicate potion IDs');
+            import('./data/potions.json', { assert: { type: 'json' } }).then(m => {
+              const data = m.default;
+              console.log('Total potions:', data.length);
+              const pools = [...new Set(data.map(c => c.pool))];
+              console.log('Pools:', pools.join(', '));
+              const ids = data.map(c => c.id);
+              const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
+              if (duplicates.length > 0) {
+                throw new Error('Duplicate potion IDs: ' + duplicates.join(', '));
+              }
+              console.log('✓ No duplicate potion IDs');
+            }).catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
           "
 
       - name: Check modifiers database
         run: |
           node -e "
-            const data = require('./data/modifiers.json');
-            console.log('Total modifiers:', data.length);
-            
-            // Check for duplicates
-            const ids = data.map(c => c.id);
-            const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
-            if (duplicates.length > 0) {
-              throw new Error('Duplicate modifier IDs: ' + duplicates.join(', '));
-            }
-            console.log('✓ No duplicate modifier IDs');
+            import('./data/modifiers.json', { assert: { type: 'json' } }).then(m => {
+              const data = m.default;
+              console.log('Total modifiers:', data.length);
+              const ids = data.map(c => c.id);
+              const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
+              if (duplicates.length > 0) {
+                throw new Error('Duplicate modifier IDs: ' + duplicates.join(', '));
+              }
+              console.log('✓ No duplicate modifier IDs');
+            }).catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
           "
 
       - name: Check orbs database
         run: |
           node -e "
-            const data = require('./data/orbs.json');
-            console.log('Total orbs:', data.length);
-            
-            // Check for duplicates
-            const ids = data.map(c => c.id);
-            const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
-            if (duplicates.length > 0) {
-              throw new Error('Duplicate orb IDs: ' + duplicates.join(', '));
-            }
-            console.log('✓ No duplicate orb IDs');
+            import('./data/orbs.json', { assert: { type: 'json' } }).then(m => {
+              const data = m.default;
+              console.log('Total orbs:', data.length);
+              const ids = data.map(c => c.id);
+              const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
+              if (duplicates.length > 0) {
+                throw new Error('Duplicate orb IDs: ' + duplicates.join(', '));
+              }
+              console.log('✓ No duplicate orb IDs');
+            }).catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
           "
 
       - name: Check ascensions database
         run: |
           node -e "
-            const data = require('./data/ascensions.json');
-            console.log('Total ascension levels:', data.length);
-            
-            // Check for duplicates
-            const ids = data.map(c => c.id);
-            const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
-            if (duplicates.length > 0) {
-              throw new Error('Duplicate ascension IDs: ' + duplicates.join(', '));
-            }
-            console.log('✓ No duplicate ascension IDs');
+            import('./data/ascensions.json', { assert: { type: 'json' } }).then(m => {
+              const data = m.default;
+              console.log('Total ascension levels:', data.length);
+              const ids = data.map(c => c.id);
+              const duplicates = ids.filter((id, idx) => ids.indexOf(id) !== idx);
+              if (duplicates.length > 0) {
+                throw new Error('Duplicate ascension IDs: ' + duplicates.join(', '));
+              }
+              console.log('✓ No duplicate ascension IDs');
+            }).catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
           "
 
   test-save-formats:
@@ -212,12 +252,13 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Create package.json for ES modules
+        run: |
+          echo '{"type": "module"}' > package.json
+
       - name: Test ${{ matrix.format }} save format (schema v${{ matrix.schema }})
         run: |
           node -e "
-            const fs = require('fs');
-            
-            // Simulate save structure
             const baseSave = {
               schema_version: ${{ matrix.schema }},
               ascension: 0,
@@ -233,8 +274,8 @@ jobs:
             const playerCount = '${{ matrix.format }}' === 'multiplayer' ? 2 : 1;
             console.log('Testing:', '${{ matrix.format }}', 'save with', playerCount, 'player(s)');
             
+            const characters = ['IRONCLAD', 'SILENT', 'DEFECT', 'NECROBINDER', 'REGENT'];
             for (let i = 0; i < playerCount; i++) {
-              const characters = ['CHARACTER.IRONCLAD', 'CHARACTER.SILENT', 'CHARACTER.DEFECT', 'CHARACTER.NECROBINDER', 'CHARACTER.REGENT'];
               baseSave.players.push({
                 character_id: characters[i % characters.length],
                 current_hp: 50,
@@ -261,16 +302,14 @@ jobs:
             baseSave.current_act_index = 0;
             baseSave.visited_map_coords = [];
             
-            // Validate the structure
             if (!baseSave.schema_version) throw new Error('Missing schema_version');
             if (!Array.isArray(baseSave.players)) throw new Error('Players not array');
             if (baseSave.players.length === 0) throw new Error('No players');
             if (baseSave.players.length !== playerCount) throw new Error('Wrong player count');
             
-            // Validate each player
             baseSave.players.forEach((p, idx) => {
               if (!p.character_id) throw new Error(\`Player \${idx}: missing character_id\`);
-              if (!p.character_id.startsWith('CHARACTER.')) throw new Error(\`Player \${idx}: invalid character_id\`);
+              if (!characters.includes(p.character_id)) throw new Error(\`Player \${idx}: invalid character_id\`);
               if (p.max_hp < 1) throw new Error(\`Player \${idx}: invalid max_hp\`);
               if (p.deck === undefined) throw new Error(\`Player \${idx}: missing deck\`);
             });
@@ -294,36 +333,47 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Create package.json for ES modules
+        run: |
+          echo '{"type": "module"}' > package.json
+
       - name: Simulate DataStore initialization
         run: |
           node -e "
-            // Load all data files
-            const cards = require('./data/cards.json');
-            const relics = require('./data/relics.json');
-            const potions = require('./data/potions.json');
-            const characters = require('./data/characters.json');
-            const modifiers = require('./data/modifiers.json');
-            const orbs = require('./data/orbs.json');
-            const ascensions = require('./data/ascensions.json');
-            
-            console.log('Data Store Initialization Test:');
-            console.log('✓ Loaded', cards.length, 'cards');
-            console.log('✓ Loaded', relics.length, 'relics');
-            console.log('✓ Loaded', potions.length, 'potions');
-            console.log('✓ Loaded', characters.length, 'characters');
-            console.log('✓ Loaded', modifiers.length, 'modifiers');
-            console.log('✓ Loaded', orbs.length, 'orbs');
-            console.log('✓ Loaded', ascensions.length, 'ascension levels');
-            
-            // Verify all characters can be looked up
-            const charIds = new Set(cards.map(c => c.color).filter(Boolean));
-            characters.forEach(char => {
-              if (char.color && !charIds.has(char.color)) {
-                console.warn('Warning: Character', char.name, 'has no cards');
-              }
+            import('./data/cards.json', { assert: { type: 'json' } }).then(async (cardsModule) => {
+              const cards = cardsModule.default;
+              const relics = (await import('./data/relics.json', { assert: { type: 'json' } })).default;
+              const potions = (await import('./data/potions.json', { assert: { type: 'json' } })).default;
+              const characters = (await import('./data/characters.json', { assert: { type: 'json' } })).default;
+              const modifiers = (await import('./data/modifiers.json', { assert: { type: 'json' } })).default;
+              const orbs = (await import('./data/orbs.json', { assert: { type: 'json' } })).default;
+              const ascensions = (await import('./data/ascensions.json', { assert: { type: 'json' } })).default;
+              
+              console.log('Data Store Initialization Test:');
+              console.log('✓ Loaded', cards.length, 'cards');
+              console.log('✓ Loaded', relics.length, 'relics');
+              console.log('✓ Loaded', potions.length, 'potions');
+              console.log('✓ Loaded', characters.length, 'characters');
+              console.log('✓ Loaded', modifiers.length, 'modifiers');
+              console.log('✓ Loaded', orbs.length, 'orbs');
+              console.log('✓ Loaded', ascensions.length, 'ascension levels');
+              
+              const charColors = new Set(characters.map(c => c.color).filter(Boolean));
+              const cardColors = new Set(cards.map(c => c.color).filter(Boolean));
+              
+              let warnings = 0;
+              characters.forEach(char => {
+                if (char.color && !cardColors.has(char.color)) {
+                  console.warn('Warning: Character', char.name, 'has color ' + char.color + ' but no cards');
+                  warnings++;
+                }
+              });
+              
+              console.log('✓ DataStore initialization successful');
+            }).catch(err => {
+              console.error(err);
+              process.exit(1);
             });
-            
-            console.log('✓ DataStore initialization successful');
           "
 
   test-cross-character-deck:
@@ -331,7 +381,7 @@ jobs:
     name: Test Deck Compatibility
     strategy:
       matrix:
-        character: ['ironclad', 'silent', 'defect', 'necrobinder', 'regent']
+        character: ['red', 'green', 'blue', 'purple', 'orange']
 
     steps:
       - name: Checkout code
@@ -342,23 +392,31 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Create package.json for ES modules
+        run: |
+          echo '{"type": "module"}' > package.json
+
       - name: Verify cards available for ${{ matrix.character }}
         run: |
           node -e "
-            const cards = require('./data/cards.json');
-            const charColor = '${{ matrix.character }}';
-            
-            // Get colorless + character-specific cards
-            const colorlessCards = cards.filter(c => c.color === 'colorless');
-            const characterCards = cards.filter(c => c.color === charColor);
-            
-            const total = colorlessCards.length + characterCards.length;
-            console.log('Character:', charColor);
-            console.log('✓ Colorless cards:', colorlessCards.length);
-            console.log('✓ Character cards:', characterCards.length);
-            console.log('✓ Total available:', total);
-            
-            if (total === 0) throw new Error('No cards available for character');
+            import('./data/cards.json', { assert: { type: 'json' } }).then(m => {
+              const cards = m.default;
+              const charColor = '${{ matrix.character }}';
+              
+              const colorlessCards = cards.filter(c => c.color === 'colorless');
+              const characterCards = cards.filter(c => c.color === charColor);
+              
+              const total = colorlessCards.length + characterCards.length;
+              console.log('Character color:', charColor);
+              console.log('✓ Colorless cards:', colorlessCards.length);
+              console.log('✓ Character cards:', characterCards.length);
+              console.log('✓ Total available:', total);
+              
+              if (total === 0) throw new Error('No cards available for character color: ' + charColor);
+            }).catch(err => {
+              console.error(err);
+              process.exit(1);
+            });
           "
 
   status:
