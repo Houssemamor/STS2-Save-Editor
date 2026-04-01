@@ -215,9 +215,11 @@ async function handleFile(file) {
 
     const info = saveManager.getSaveInfo();
 
-    // Schema version check
-    if (info.schema_version !== 14) {
-        schemaWarning.textContent = `Warning: Save file uses schema version ${info.schema_version} (expected 14). Editing may not work correctly.`;
+    // Schema version check - support versions 14-15
+    const MIN_SCHEMA = 14;
+    const MAX_SCHEMA = 15;
+    if (info.schema_version < MIN_SCHEMA || info.schema_version > MAX_SCHEMA) {
+        schemaWarning.textContent = `Warning: Save file uses schema version ${info.schema_version} (expected ${MIN_SCHEMA}-${MAX_SCHEMA}). Editing may not work correctly.`;
         schemaWarning.classList.remove('hidden');
     } else {
         schemaWarning.classList.add('hidden');
