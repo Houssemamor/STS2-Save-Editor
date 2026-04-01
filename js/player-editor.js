@@ -4,6 +4,10 @@ import { getCharacterIconUrl, showToast } from './utils.js';
 import { DeckEditor } from './deck-editor.js';
 import { RelicEditor } from './relic-editor.js';
 import { PotionEditor } from './potion-editor.js';
+import { OrbsEditor } from './orbs-editor.js';
+import { DiscoveredItemsEditor } from './discovered-items-editor.js';
+import { AscensionEditor } from './ascension-editor.js';
+import { ModifiersEditor } from './modifiers-editor.js';
 
 export class PlayerEditor {
     constructor(saveManager) {
@@ -151,6 +155,18 @@ export class PlayerEditor {
 
         panel.appendChild(statsGrid);
 
+        // Ascension editor (first player only)
+        if (index === 0) {
+            const ascensionEditor = new AscensionEditor(this.saveManager);
+            ascensionEditor.render(panel);
+        }
+
+        // Modifiers editor (first player only)
+        if (index === 0) {
+            const modifiersEditor = new ModifiersEditor(this.saveManager);
+            modifiersEditor.render(panel);
+        }
+
         // Deck editor
         new DeckEditor(index, player, panel, this.saveManager);
 
@@ -161,6 +177,14 @@ export class PlayerEditor {
         const potionEditor = new PotionEditor(index, player, panel, this.saveManager);
         this.potionEditors = this.potionEditors || {};
         this.potionEditors[index] = potionEditor;
+
+        // Orbs editor (Defect only)
+        const orbsEditor = new OrbsEditor(this.saveManager, index);
+        orbsEditor.render(panel);
+
+        // Discovered items editor
+        const discoveredEditor = new DiscoveredItemsEditor(this.saveManager, index);
+        discoveredEditor.render(panel);
 
         this.panelsEl.appendChild(panel);
     }

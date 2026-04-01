@@ -67,6 +67,16 @@ class ItemBrowser {
             this.allItems = dataStore.getAllPotions();
             this.typeSelect.classList.add('hidden');
             this.costSelect.classList.add('hidden');
+        } else if (mode === 'modifier') {
+            this.titleEl.textContent = 'Add Modifier';
+            this.allItems = dataStore.getAllModifiers();
+            this.typeSelect.classList.add('hidden');
+            this.costSelect.classList.add('hidden');
+        } else if (mode === 'orb') {
+            this.titleEl.textContent = 'Add Orb';
+            this.allItems = dataStore.getAllOrbs();
+            this.typeSelect.classList.add('hidden');
+            this.costSelect.classList.add('hidden');
         }
 
         this.populateFilters();

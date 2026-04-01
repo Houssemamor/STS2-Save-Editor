@@ -103,6 +103,62 @@ class SaveManager {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
+
+    getAscension() {
+        return this.workingSave ? this.workingSave.ascension ?? 0 : 0;
+    }
+
+    setAscension(level) {
+        if (this.workingSave) {
+            this.workingSave.ascension = Math.max(0, Math.min(20, level));
+        }
+    }
+
+    getModifiers() {
+        return this.workingSave ? this.workingSave.modifiers || [] : [];
+    }
+
+    setModifiers(modifierIds) {
+        if (this.workingSave) {
+            this.workingSave.modifiers = modifierIds;
+        }
+    }
+
+    getDiscoveredCards(playerIndex) {
+        const player = this.getPlayer(playerIndex);
+        return player ? player.discovered_cards || [] : [];
+    }
+
+    setDiscoveredCards(playerIndex, cardIds) {
+        const player = this.getPlayer(playerIndex);
+        if (player) {
+            player.discovered_cards = cardIds;
+        }
+    }
+
+    getDiscoveredRelics(playerIndex) {
+        const player = this.getPlayer(playerIndex);
+        return player ? player.discovered_relics || [] : [];
+    }
+
+    setDiscoveredRelics(playerIndex, relicIds) {
+        const player = this.getPlayer(playerIndex);
+        if (player) {
+            player.discovered_relics = relicIds;
+        }
+    }
+
+    getOrbSlotCount(playerIndex) {
+        const player = this.getPlayer(playerIndex);
+        return player ? player.base_orb_slot_count || 0 : 0;
+    }
+
+    setOrbSlotCount(playerIndex, count) {
+        const player = this.getPlayer(playerIndex);
+        if (player) {
+            player.base_orb_slot_count = Math.max(0, count);
+        }
+    }
 }
 
 export const saveManager = new SaveManager();
