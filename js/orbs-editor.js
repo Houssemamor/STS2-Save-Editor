@@ -1,5 +1,6 @@
 import { dataStore } from './data-store.js';
 import { itemBrowser } from './item-browser.js';
+import { formatDescription } from './utils.js';
 
 export class OrbsEditor {
     constructor(saveManager, playerIndex) {
@@ -65,7 +66,7 @@ export class OrbsEditor {
             item.className = 'orb-info';
             item.innerHTML = `
                 <h4>${orb.name}</h4>
-                <p class="description">${orb.description}</p>
+                <p class="description">${formatDescription(orb.description)}</p>
             `;
             orbsList.appendChild(item);
         });
