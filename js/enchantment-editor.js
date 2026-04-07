@@ -107,13 +107,15 @@ class EnchantmentEditorClass {
      * Render current enchantment display section.
      */
     renderCurrentEnchantment() {
+        // Always hide amount control initially
+        this.amountControl.classList.add('hidden');
+
         if (!this.currentEnchantment || !this.currentEnchantment.id) {
             this.currentEnchantmentDisplay.innerHTML = `
                 <div class="enchantment-empty">
                     <span>No enchantment</span>
                 </div>
             `;
-            this.amountControl.classList.add('hidden');
             return;
         }
 
@@ -124,13 +126,11 @@ class EnchantmentEditorClass {
                     <span>Unknown enchantment: ${this.currentEnchantment.id}</span>
                 </div>
             `;
-            this.amountControl.classList.add('hidden');
             return;
         }
 
         const imgUrl = enchantmentManager.getEnchantmentImageUrl(enchantment.id);
         const fallbackUrl = enchantmentManager.getFallbackImageUrl();
-        const isStackable = enchantmentManager.isStackable(enchantment.id);
         const amount = this.currentEnchantment.amount || 1;
 
         // Render current enchantment with icon and remove button
@@ -150,8 +150,7 @@ class EnchantmentEditorClass {
             this.removeEnchantment();
         });
 
-        // Show amount control for all enchantments (user can set amounts 1-20)
-        // The slider allows adjustment even if is_stackable is false
+        // Show amount control only when enchantment is valid
         this.amountSlider.value = amount;
         this.amountValue.textContent = amount;
         this.amountControl.classList.remove('hidden');
