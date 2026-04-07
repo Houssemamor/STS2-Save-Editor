@@ -9,18 +9,22 @@ class DataStore {
         this.modifiers = new Map();
         this.orbs = new Map();
         this.ascensions = new Map();
+        this.epochs = new Map();
+        this.enchantments = new Map();
         this.ready = false;
     }
 
     async init() {
-        const [cardsData, relicsData, potionsData, charsData, modifiersData, orbsData, ascensionsData] = await Promise.all([
+        const [cardsData, relicsData, potionsData, charsData, modifiersData, orbsData, ascensionsData, epochsData, enchantmentsData] = await Promise.all([
             fetch('data/cards.json').then(r => r.json()),
             fetch('data/relics.json').then(r => r.json()),
             fetch('data/potions.json').then(r => r.json()),
             fetch('data/characters.json').then(r => r.json()),
             fetch('data/modifiers.json').then(r => r.json()),
             fetch('data/orbs.json').then(r => r.json()),
-            fetch('data/ascensions.json').then(r => r.json())
+            fetch('data/ascensions.json').then(r => r.json()),
+            fetch('data/epochs.json').then(r => r.json()),
+            fetch('data/enchantments.json').then(r => r.json())
         ]);
 
         cardsData.forEach(c => this.cards.set(c.id, c));
@@ -30,6 +34,8 @@ class DataStore {
         modifiersData.forEach(m => this.modifiers.set(m.id, m));
         orbsData.forEach(o => this.orbs.set(o.id, o));
         ascensionsData.forEach(a => this.ascensions.set(a.id, a));
+        epochsData.forEach(e => this.epochs.set(e.id, e));
+        enchantmentsData.forEach(en => this.enchantments.set(en.id, en));
 
         this.ready = true;
     }
@@ -64,6 +70,10 @@ class DataStore {
 
     getCharacterBySaveId(saveId) {
         return this.getCharacter(this.stripPrefix(saveId, 'character'));
+    }
+
+    getEnchantmentBySaveId(saveId) {
+        return this.getEnchantment(this.stripPrefix(saveId, 'enchantment'));
     }
 
     stripPrefix(saveId, type) {
@@ -120,6 +130,14 @@ class DataStore {
         return this.ascensions.get(ascensionId) || null;
     }
 
+    getEpoch(epochId) {
+        return this.epochs.get(epochId) || null;
+    }
+
+    getEnchantment(enchantmentId) {
+        return this.enchantments.get(enchantmentId) || null;
+    }
+
     getAllModifiers() {
         return [...this.modifiers.values()];
     }
@@ -130,6 +148,14 @@ class DataStore {
 
     getAllAscensions() {
         return [...this.ascensions.values()];
+    }
+
+    getAllEpochs() {
+        return [...this.epochs.values()];
+    }
+
+    getAllEnchantments() {
+        return [...this.enchantments.values()];
     }
 }
 

@@ -2,6 +2,8 @@ import { dataStore } from './data-store.js';
 import { SAFE_LIMITS, addPrefix, stripPrefix } from './constants.js';
 import { resolveImageUrl, showToast, getCardDescription, bindEntryTooltip } from './utils.js';
 import { itemBrowser } from './item-browser.js';
+import { enchantmentManager } from './enchantment-manager.js';
+import { enchantmentEditor } from './enchantment-editor.js';
 
 export class DeckEditor {
     constructor(playerIndex, player, container, saveManager) {
@@ -98,7 +100,10 @@ export class DeckEditor {
     getCardGroupKey(card) {
         const normalizedProps = this.normalizeObject(card.props || null);
         const upgradeLevel = card.current_upgrade_level || 0;
-        return `${card.id}|${upgradeLevel}|${JSON.stringify(normalizedProps)}`;
+        const enchantmentKey = card.enchantment
+            ? `${card.enchantment.id}|${card.enchantment.amount || 1}`
+            : 'none';
+        return `${card.id}|${upgradeLevel}|${JSON.stringify(normalizedProps)}|${enchantmentKey}`;
     }
 
     normalizeObject(value) {
@@ -192,6 +197,14 @@ export class DeckEditor {
             const badges = [];
             if (cardData.type) badges.push(`<span class="badge badge-type">${cardData.type}</span>`);
             if (cardData.rarity) badges.push(`<span class="badge badge-rarity-${cardData.rarity.toLowerCase()}">${cardData.rarity}</span>`);
+            if (sample.enchantment && sample.enchantment.id) {
+                const enchantmentData = enchantmentManager.getEnchantmentById(sample.enchantment.id);
+                if (enchantmentData) {
+                    const enchantImgUrl = enchantmentManager.getEnchantmentImageUrl(sample.enchantment.id);
+                    const enchantLabel = enchantmentManager.getEnchantmentLabel(sample.enchantment);
+                    badges.push(`<span class="badge badge-enchantment"><img src="${enchantImgUrl}" alt="${enchantLabel}" class="enchantment-icon">${enchantLabel}</span>`);
+                }
+            }
             if (isUpgraded) badges.push(`<span class="badge badge-upgraded">+${sample.current_upgrade_level}</span>`);
             if (hasProps) badges.push(`<span class="badge badge-props">props</span>`);
             metaHtml = badges.join(' ');
@@ -226,6 +239,15 @@ export class DeckEditor {
             });
             entry.appendChild(upgradeBtn);
         }
+
+        // Enchantment editor button
+        const enchantBtn = document.createElement('button');
+        enchantBtn.className = 'btn-enchantment';
+        enchantBtn.textContent = sample.enchantment ? 'Edit Enchantments' : 'Add Enchantment';
+        enchantBtn.addEventListener('click', () => {
+            this.openEnchantmentEditor(group, cardData);
+        });
+        entry.appendChild(enchantBtn);
 
         const subtractBtn = entry.querySelector('[data-action="subtract"]');
         const addBtn = entry.querySelector('[data-action="add"]');
@@ -297,6 +319,18 @@ export class DeckEditor {
                     itemBrowser.close();
                 }
             }
+        });
+    }
+
+    /**
+     * Open enchantment editor modal for a card group.
+     * @param {Object} group - Card group from getDeckGroups
+     * @param {Object} cardData - Card data from dataStore (or null)
+     */
+    openEnchantmentEditor(group, cardData) {
+        enchantmentEditor.open(group, cardData, (updatedGroup, enchantment) => {
+            // After enchantment is saved, refresh the deck view to update badges
+            this.refresh();
         });
     }
 

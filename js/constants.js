@@ -12,7 +12,8 @@ export const ID_PREFIXES = {
     card: 'CARD.',
     relic: 'RELIC.',
     potion: 'POTION.',
-    character: 'CHARACTER.'
+    character: 'CHARACTER.',
+    enchantment: 'ENCHANTMENT.'
 };
 
 export const CHARACTER_COLORS = {

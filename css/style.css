@@ -176,6 +176,45 @@ body {
     background: rgba(200, 168, 78, 0.1);
 }
 
+/* Upgrade/downgrade buttons - similar hover behavior */
+.btn-upgrade-all,
+.btn-downgrade-all {
+    font-size: 0.78rem;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+    border: 1px solid;
+    color: var(--accent-gold);
+}
+
+.btn-upgrade-all {
+    background: rgba(200, 168, 78, 0.1);
+    border-color: var(--accent-gold-dim);
+}
+
+.btn-upgrade-all:hover:not(:disabled) {
+    background: rgba(200, 168, 78, 0.25);
+    border-color: var(--accent-gold);
+}
+
+.btn-downgrade-all {
+    background: rgba(200, 168, 78, 0.15);
+    border-color: var(--accent-gold);
+}
+
+.btn-downgrade-all:hover:not(:disabled) {
+    background: rgba(200, 168, 78, 0.05);
+    border-color: var(--accent-gold-dim);
+    color: var(--accent-gold-dim);
+}
+
+.btn-upgrade-all:disabled,
+.btn-downgrade-all:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
 .btn-upgrade {
     font-size: 0.75rem;
     padding: 2px 8px;
@@ -196,6 +235,35 @@ body {
     background: rgba(200, 168, 78, 0.15);
     border-color: var(--accent-gold);
     color: var(--accent-gold);
+}
+
+.btn-enchantment {
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid var(--border-light);
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.btn-enchantment:hover {
+    border-color: var(--accent-gold-dim);
+    color: var(--accent-gold);
+    background: rgba(200, 168, 78, 0.1);
+}
+
+/* ── Main Editor ── */
+#editor-main {
+    display: block;
+    background: var(--bg-deepest);
+    min-height: 100vh;
+    padding-bottom: 48px;
+}
+
+#editor-main.hidden {
+    display: none !important;
 }
 
 /* ── Hidden ── */
@@ -246,25 +314,48 @@ body {
     padding: 0 24px;
 }
 
+/* Unified tab styling - shared across player-tab, progress-tab-btn, tab-btn */
+.player-tab,
+.progress-tab-btn,
+.discovered-items-editor .tab-btn {
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    user-select: none;
+    white-space: nowrap;
+}
+
 .player-tab {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    color: var(--text-secondary);
     font-size: 0.9rem;
-    transition: all var(--transition);
-    user-select: none;
+    font-weight: normal;
 }
 
-.player-tab:hover {
+.discovered-items-editor .tab-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    border-bottom: 2px solid transparent;
+}
+
+.player-tab:hover,
+.progress-tab-btn:hover,
+.discovered-items-editor .tab-btn:hover {
     color: var(--text-primary);
     background: var(--bg-raised);
 }
 
-.player-tab.active {
+.player-tab.active,
+.progress-tab-btn.active,
+.discovered-items-editor .tab-btn.active {
     color: var(--text-primary);
     border-bottom-color: var(--accent-gold);
 }
@@ -384,49 +475,6 @@ body {
     align-items: center;
 }
 
-.btn-upgrade-all {
-    font-size: 0.78rem;
-    padding: 4px 10px;
-    background: rgba(200, 168, 78, 0.1);
-    border: 1px solid var(--accent-gold-dim);
-    color: var(--accent-gold);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.btn-upgrade-all:hover:not(:disabled) {
-    background: rgba(200, 168, 78, 0.25);
-    border-color: var(--accent-gold);
-}
-
-.btn-upgrade-all:disabled {
-    opacity: 0.35;
-    cursor: default;
-}
-
-.btn-downgrade-all {
-    font-size: 0.78rem;
-    padding: 4px 10px;
-    background: rgba(200, 168, 78, 0.15);
-    border: 1px solid var(--accent-gold);
-    color: var(--accent-gold);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: var(--transition);
-}
-
-.btn-downgrade-all:hover:not(:disabled) {
-    background: rgba(200, 168, 78, 0.05);
-    border-color: var(--accent-gold-dim);
-    color: var(--accent-gold-dim);
-}
-
-.btn-downgrade-all:disabled {
-    opacity: 0.35;
-    cursor: default;
-}
-
 /* ── Item List (shared for deck/relics/potions) ── */
 .item-list {
     max-height: 500px;
@@ -493,6 +541,7 @@ body {
     margin-right: 4px;
 }
 
+/* Small quantity/stack buttons */
 .btn-stack-qty {
     width: 24px;
     height: 24px;
@@ -504,6 +553,7 @@ body {
     font-size: 0.95rem;
     line-height: 1;
     padding: 0;
+    transition: border-color var(--transition), color var(--transition);
 }
 
 .btn-stack-qty:hover:not(:disabled) {
@@ -544,12 +594,10 @@ body {
     color: var(--text-secondary);
 }
 
-.badge-rarity-common {
-    background: rgba(124, 124, 124, 0.2);
-    color: var(--rarity-common);
-}
-
-.badge-rarity-basic {
+/* Rarity badges - applies common/basic/starter/etc consistently */
+.badge-rarity-common,
+.badge-rarity-basic,
+.badge-rarity-starter {
     background: rgba(124, 124, 124, 0.2);
     color: var(--rarity-common);
 }
@@ -569,11 +617,6 @@ body {
     color: var(--rarity-ancient);
 }
 
-.badge-rarity-starter {
-    background: rgba(124, 124, 124, 0.2);
-    color: var(--rarity-starter);
-}
-
 .badge-rarity-shop {
     background: rgba(68, 136, 204, 0.15);
     color: var(--rarity-shop);
@@ -584,16 +627,9 @@ body {
     color: var(--rarity-event);
 }
 
-.badge-rarity-curse {
-    background: rgba(204, 68, 68, 0.15);
-    color: var(--rarity-curse);
-}
-
-.badge-rarity-status {
-    background: rgba(204, 68, 68, 0.15);
-    color: var(--rarity-curse);
-}
-
+/* Red rarity badges (curse/status/special) - shared styling */
+.badge-rarity-curse,
+.badge-rarity-status,
 .badge-rarity-special {
     background: rgba(204, 68, 68, 0.15);
     color: var(--rarity-curse);
@@ -830,6 +866,11 @@ body {
     color: #dd88bb;
 }
 
+.sts-sine {
+    color: #aa88dd;
+    font-style: italic;
+}
+
 .sts-energy {
     color: #ee6655;
     font-weight: 600;
@@ -902,7 +943,7 @@ body {
 }
 
 .section h3 {
-    font-size: 16px;
+    font-size: 13px;
     font-weight: 600;
     margin-bottom: 12px;
     color: var(--accent-gold);
@@ -922,7 +963,8 @@ body {
     flex: 1;
     height: 6px;
     border-radius: 3px;
-    background: var(--border-light);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
     outline: none;
     -webkit-appearance: none;
 }
@@ -965,12 +1007,13 @@ body {
 
 .ascension-editor .item-description {
     margin-top: 12px;
-    padding: 8px 12px;
+    padding: 10px 12px;
     background: var(--bg-surface);
     border-left: 3px solid var(--accent-gold);
-    border-radius: 4px;
-    font-size: 13px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
     color: var(--text-secondary);
+    line-height: 1.4;
 }
 
 /* Modifiers Editor */
@@ -981,13 +1024,6 @@ body {
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     background: var(--bg-surface);
-}
-
-.modifiers-editor .empty-state {
-    padding: 16px;
-    text-align: center;
-    color: var(--text-dim);
-    font-size: 13px;
 }
 
 .modifier-item {
@@ -1009,16 +1045,16 @@ body {
 }
 
 .modifier-item h4 {
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
-    color: var(--text-primary);
+    color: var(--accent-gold);
     margin-bottom: 4px;
 }
 
 .modifier-item .description {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-secondary);
-    line-height: 1.3;
+    line-height: 1.4;
 }
 
 /* Discovered Items Editor */
@@ -1028,27 +1064,6 @@ body {
     gap: 8px;
     margin-bottom: 12px;
     border-bottom: 1px solid var(--border);
-}
-
-.discovered-items-editor .tab-btn {
-    padding: 8px 12px;
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    transition: all 0.2s;
-}
-
-.discovered-items-editor .tab-btn:hover {
-    color: var(--text-primary);
-}
-
-.discovered-items-editor .tab-btn.active {
-    color: var(--accent-gold);
-    border-bottom-color: var(--accent-gold);
 }
 
 .discovered-items-editor .discovered-panel {
@@ -1073,10 +1088,16 @@ body {
     gap: 8px;
     padding: 6px 10px;
     background: var(--bg-surface);
-    border: 1px solid var(--border-light);
+    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-primary);
+    transition: all var(--transition);
+}
+
+.discovered-items-editor .discovered-item:hover {
+    border-color: var(--accent-gold-dim);
+    background: var(--bg-hover);
 }
 
 .discovered-items-editor .discovered-item .btn-xs {
@@ -1086,23 +1107,480 @@ body {
 }
 
 .discovered-items-editor .info-text {
-    font-size: 12px;
+    font-size: 11px;
     color: var(--text-secondary);
     margin-bottom: 8px;
 }
 
-/* Orbs Editor */
+/* Progress Editor Icons - unified into single pattern */
+.stat-icon,
+.card-icon,
+.discovery-icon,
+.char-stat-icon {
+    object-fit: contain;
+    vertical-align: middle;
+    display: inline-block;
+}
 
+.stat-icon {
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+}
+
+.card-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 6px;
+}
+
+.discovery-icon,
+.char-stat-icon {
+    width: 20px;
+    height: 20px;
+    margin-right: 4px;
+}
+
+.char-stat-icon {
+    margin-right: 6px;
+}
+
+.discovered-item-line {
+    display: flex;
+    align-items: center;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.character-cell {
+    display: flex;
+    align-items: center;
+}
+
+/* Progress Editor */
+
+#progress-editor-section {
+    background: var(--bg-deepest);
+    padding: 24px !important;
+    margin: 24px 0 !important;
+}
+
+.progress-editor {
+    margin-top: 0;
+}
+
+.progress-content {
+    padding: 16px 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+/* Base section/box styling - shared across multiple container types */
+.stat-section,
+.discovery-section,
+.enemy-stat-section,
+.epoch-card,
+.orbs-editor .orb-info {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    transition: all var(--transition);
+}
+
+/* Hover effects for interactive sections */
+.epoch-card:hover,
+.orbs-editor .orb-info:hover {
+    border-color: var(--accent-gold-dim);
+    background: var(--bg-raised);
+}
+
+/* Headings within sections */
+.stat-section h4,
+.discovery-section h4,
+.enemy-stat-section h4,
+.orbs-editor .orb-info h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--accent-gold);
+    margin-bottom: 10px;
+}
+
+/* Descriptions within sections */
+.orbs-editor .orb-info .description {
+    font-size: 11px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.stat-section h4 {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.stat-row label {
+    flex: 1;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.stat-row input {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    padding: 6px 8px;
+    font-size: 0.85rem;
+    width: 100px;
+}
+
+.stat-row input:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+}
+
+.stat-row.checkbox {
+    flex-direction: row;
+}
+
+.stat-row.checkbox label {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.stat-row checkbox {
+    cursor: pointer;
+}
+
+/* Unified table styling for all data tables */
+.stats-table,
+.fight-stats-table,
+.epochs-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-surface);
+}
+
+.stats-table,
+.epochs-table {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.stats-table thead,
+.fight-stats-table thead,
+.epochs-table thead {
+    background: var(--bg-raised);
+}
+
+.stats-table th,
+.epochs-table th {
+    padding: 10px;
+    text-align: left;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.fight-stats-table th {
+    padding: 8px;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.stats-table td,
+.epochs-table td {
+    padding: 8px 10px;
+    border-top: 1px solid var(--border);
+    font-size: 0.8rem;
+}
+
+.fight-stats-table td {
+    padding: 6px 8px;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+}
+
+.stats-table tr:hover,
+.fight-stats-table tr:hover,
+.epochs-table tr:hover {
+    background: var(--bg-raised);
+}
+
+.stats-table input,
+.fight-stats-table input,
+.epochs-table input {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    padding: 4px 6px;
+    font-size: 0.75rem;
+    font-family: inherit;
+}
+
+.stats-table input {
+    background: var(--bg-deepest);
+}
+
+.fight-stats-table input {
+    background: var(--bg-surface);
+    padding: 4px;
+    font-size: 0.7rem;
+}
+
+.stats-table input:focus,
+.fight-stats-table input:focus,
+.epochs-table input:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+}
+
+.fight-stats-table {
+    background: var(--bg-deepest);
+}
+
+.discovery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.progress-bar {
+    position: relative;
+    height: 24px;
+    background: var(--bg-deepest);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent-gold), var(--accent-green));
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    pointer-events: none;
+}
+
+.discovered-list {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+/* Unified empty state styling */
+.empty-state,
+.modifiers-editor .empty-state {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+}
+
+.enemy-stats-list {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.fight-stats-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--bg-deepest);
+}
+
+.fight-stats-table thead {
+    background: var(--bg-raised);
+}
+
+.fight-stats-table th {
+    padding: 8px;
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.fight-stats-table td {
+    padding: 6px 8px;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+}
+
+.fight-stats-table input {
+    width: 100%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--text-primary);
+    padding: 4px;
+    font-size: 0.7rem;
+}
+
+.fight-stats-table input:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+}
+
+.epoch-state-select {
+    background: var(--bg-deepest);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    padding: 4px 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.epoch-state-select:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+}
+
+.epochs-list {
+    display: grid;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.epoch-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    gap: 12px;
+}
+
+.epoch-title {
+    flex: 1;
+}
+
+.epoch-title h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--accent-gold);
+    margin: 0;
+    margin-bottom: 4px;
+}
+
+.epoch-era {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    display: inline-block;
+}
+
+.epoch-controls {
+    flex-shrink: 0;
+}
+
+.epoch-date {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+}
+
+.epoch-description {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.global-stats-form {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    max-width: 500px;
+}
+
+.form-section h4 {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--accent-gold);
+    margin-bottom: 12px;
+}
+
+.character-stat {
+    background: var(--bg-surface);
+    border-left: 3px solid var(--accent-gold);
+}
+
+.character-stat h4 {
+    margin-bottom: 10px;
+}
+
+.card-name {
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+/* ── Orbs Editor ── */
 .orbs-editor .number-input {
     width: 60px;
-    padding: 4px 8px;
-    font-size: 13px;
+    padding: 6px 8px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: inherit;
+    transition: border-color var(--transition);
+}
+
+.orbs-editor .number-input:focus {
+    outline: none;
+    border-color: var(--accent-gold);
 }
 
 .orbs-editor .hint {
-    font-size: 11px;
+    font-size: 10px;
     color: var(--text-dim);
     font-style: italic;
+    margin-top: 4px;
 }
 
 .orbs-editor .orbs-list {
@@ -1112,69 +1590,7 @@ body {
 .orbs-editor .orbs-available {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-}
-
-.orbs-editor .orb-info {
-    padding: 8px 12px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-sm);
-}
-
-.orbs-editor .orb-info h4 {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--accent-blue);
-    margin-bottom: 4px;
-}
-
-.orbs-editor .orb-info .description {
-    font-size: 11px;
-    color: var(--text-secondary);
-    line-height: 1.3;
-}
-
-.orbs-editor .number-input {
-    width: 60px;
-    padding: 4px 8px;
-    font-size: 13px;
-}
-
-.orbs-editor .hint {
-    font-size: 11px;
-    color: var(--text-dim);
-    font-style: italic;
-}
-
-.orbs-editor .orbs-list {
-    margin-top: 12px;
-}
-
-.orbs-editor .orbs-available {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.orbs-editor .orb-info {
-    padding: 8px 12px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-light);
-    border-radius: var(--radius-sm);
-}
-
-.orbs-editor .orb-info h4 {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--accent-blue);
-    margin-bottom: 4px;
-}
-
-.orbs-editor .orb-info .description {
-    font-size: 11px;
-    color: var(--text-secondary);
-    line-height: 1.3;
+    gap: 10px;
 }
 
 /* ── Upload Area (before save loaded) ── */
@@ -1324,4 +1740,271 @@ body {
     #browser-grid {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
+}
+
+/* ── Enchantment Editor Modal ── */
+#enchantment-editor-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.enchantment-editor-section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.enchantment-editor-section h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--accent-gold);
+    margin: 0;
+}
+
+/* Current Enchantment Display */
+#enchantment-editor-current {
+    min-height: 60px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+}
+
+.enchantment-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 60px;
+    color: var(--text-dim);
+    font-size: 0.85rem;
+}
+
+.enchantment-current-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.enchantment-current-item .enchantment-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-deepest);
+    flex-shrink: 0;
+    object-fit: contain;
+    padding: 4px;
+}
+
+.enchantment-current-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.enchantment-current-name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.enchantment-current-desc {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.btn-remove-enchantment {
+    flex-shrink: 0;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--accent-red);
+    color: var(--accent-red);
+    border-radius: var(--radius-sm);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.btn-remove-enchantment:hover {
+    background: rgba(204, 68, 68, 0.15);
+    border-color: var(--accent-red);
+    color: #ff6666;
+}
+
+/* Amount Control */
+.enchantment-amount-control {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--bg-deepest);
+    border-radius: var(--radius-sm);
+}
+
+.enchantment-amount-control label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+#enchantment-editor-amount-slider {
+    flex: 1;
+    height: 5px;
+    border-radius: 3px;
+    background: var(--border);
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+#enchantment-editor-amount-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent-gold);
+    cursor: pointer;
+    transition: background var(--transition);
+}
+
+#enchantment-editor-amount-slider::-webkit-slider-thumb:hover {
+    background: var(--accent-gold-dim);
+}
+
+#enchantment-editor-amount-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent-gold);
+    cursor: pointer;
+    border: none;
+    transition: background var(--transition);
+}
+
+#enchantment-editor-amount-slider::-moz-range-thumb:hover {
+    background: var(--accent-gold-dim);
+}
+
+#enchantment-editor-amount-value {
+    font-weight: 600;
+    color: var(--accent-gold);
+    min-width: 30px;
+    text-align: center;
+    font-size: 0.85rem;
+}
+
+/* Enchantment Search */
+#enchantment-editor-search {
+    padding: 8px 12px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-family: inherit;
+    transition: border-color var(--transition);
+}
+
+#enchantment-editor-search:focus {
+    outline: none;
+    border-color: var(--accent-gold);
+}
+
+/* Enchantment Grid */
+#enchantment-editor-grid,
+.enchantment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    min-height: 100px;
+}
+
+.enchantment-grid-item {
+    background: var(--bg-raised);
+    border: 2px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    position: relative;
+}
+
+.enchantment-grid-item:hover {
+    border-color: var(--accent-gold-dim);
+    background: var(--bg-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.enchantment-item-image {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-deepest);
+    border-radius: var(--radius-sm);
+    flex-shrink: 0;
+}
+
+.enchantment-item-image img {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+}
+
+.enchantment-item-name {
+    font-size: 0.8rem;
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--text-primary);
+    word-break: break-word;
+}
+
+.enchantment-item-badge {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: rgba(200, 168, 78, 0.2);
+    color: var(--accent-gold);
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+}
+
+/* Badge for enchantments on cards */
+.badge-enchantment {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(200, 168, 78, 0.15);
+    color: var(--accent-gold);
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-weight: 600;
+    text-transform: none;
+}
+
+.badge-enchantment .enchantment-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+    object-fit: contain;
 }

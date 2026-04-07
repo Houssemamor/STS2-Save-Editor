@@ -1,6 +1,7 @@
 import { dataStore } from './data-store.js';
 import { saveManager } from './save-manager.js';
 import { PlayerEditor } from './player-editor.js';
+import { ProgressEditor } from './progress-editor.js';
 import { showToast } from './utils.js';
 
 const SAVE_PATH_TEMPLATE = '%APPDATA%\\SlayTheSpire2\\steam\\<SteamID>\\profile1\\saves\\';
@@ -19,6 +20,7 @@ const dropZone = document.getElementById('drop-zone');
 const copyPathBtn = document.getElementById('btn-copy-path');
 
 let playerEditor = null;
+let progressEditor = null;
 let lastDirHandle = null;
 
 // ── IndexedDB helpers for persisting the directory handle ──
@@ -213,42 +215,91 @@ async function handleFile(file) {
         return;
     }
 
-    const info = saveManager.getSaveInfo();
+    try {
+        const info = saveManager.getSaveInfo();
+        const isProgressSave = !saveManager.workingSave.players;
 
-    // Schema version check - support versions 14-15
-    const MIN_SCHEMA = 14;
-    const MAX_SCHEMA = 15;
-    if (info.schema_version < MIN_SCHEMA || info.schema_version > MAX_SCHEMA) {
-        schemaWarning.textContent = `Warning: Save file uses schema version ${info.schema_version} (expected ${MIN_SCHEMA}-${MAX_SCHEMA}). Editing may not work correctly.`;
-        schemaWarning.classList.remove('hidden');
-    } else {
-        schemaWarning.classList.add('hidden');
+        console.log('File loaded:', { filename: file.name, isProgressSave, info });
+
+        // Schema version check - support versions 14-21
+        const MIN_SCHEMA = 14;
+        const MAX_SCHEMA = 21;
+        if (info && info.schema_version && (info.schema_version < MIN_SCHEMA || info.schema_version > MAX_SCHEMA)) {
+            schemaWarning.textContent = `Warning: Save file uses schema version ${info.schema_version} (expected ${MIN_SCHEMA}-${MAX_SCHEMA}). Editing may not work correctly.`;
+            schemaWarning.classList.remove('hidden');
+        } else {
+            schemaWarning.classList.add('hidden');
+        }
+
+        // Save info bar - show appropriate info
+        if (info && !isProgressSave) {
+            const runMins = Math.floor(info.run_time / 60);
+            const runSecs = info.run_time % 60;
+            const actName = info.current_act_id.replace('ACT.', '').replace(/_/g, ' ');
+
+            saveInfoEl.innerHTML = `
+                <div class="info-item"><span class="info-label">Seed:</span> <span class="info-value">${info.seed}</span></div>
+                <div class="info-item"><span class="info-label">Ascension:</span> <span class="info-value">${info.ascension}</span></div>
+                <div class="info-item"><span class="info-label">Act:</span> <span class="info-value">${actName}</span></div>
+                <div class="info-item"><span class="info-label">Run Time:</span> <span class="info-value">${runMins}m ${runSecs}s</span></div>
+                <div class="info-item"><span class="info-label">Players:</span> <span class="info-value">${info.player_count}${saveManager.isMultiplayer() ? ' (Multiplayer)' : ' (Solo)'}</span></div>
+            `;
+        } else if (isProgressSave) {
+            const progress = saveManager.getProgress();
+            saveInfoEl.innerHTML = `
+                <div class="info-item"><span class="info-label">Progress File</span></div>
+                <div class="info-item"><span class="info-label">Schema:</span> <span class="info-value">${progress?.schema_version || 'Unknown'}</span></div>
+                <div class="info-item"><span class="info-label">Unique ID:</span> <span class="info-value">${progress?.unique_id || 'Unknown'}</span></div>
+            `;
+        } else {
+            saveInfoEl.innerHTML = '<div class="info-item"><span class="info-label">Save Loaded</span></div>';
+        }
+
+        // Update UI
+        fileStatus.textContent = saveManager.filename;
+        uploadArea.classList.add('hidden');
+        editorMain.classList.remove('hidden');
+        downloadBtn.disabled = false;
+
+        // Render player editor only if this is a current_run save
+        if (!isProgressSave) {
+            playerEditor = new PlayerEditor(saveManager);
+            playerEditor.render();
+        } else {
+            // Hide player tabs/panels for progress save
+            const playerTabsSection = document.getElementById('player-tabs');
+            const playerPanelsSection = document.getElementById('player-panels');
+            if (playerTabsSection) playerTabsSection.innerHTML = '';
+            if (playerPanelsSection) playerPanelsSection.innerHTML = '';
+        }
+
+        // Render progress editor
+        const existingProgressSection = document.getElementById('progress-editor-section');
+        if (existingProgressSection) {
+            existingProgressSection.remove();
+        }
+        
+        const progressSectionWrapper = document.createElement('section');
+        progressSectionWrapper.id = 'progress-editor-section';
+        progressSectionWrapper.style.cssText = 'margin: 24px 0; padding: 0 24px;';
+        
+        editorMain.appendChild(progressSectionWrapper);
+        
+        try {
+            progressEditor = new ProgressEditor(saveManager);
+            progressEditor.render(progressSectionWrapper);
+            console.log('Progress editor rendered successfully');
+        } catch (err) {
+            console.error('Error rendering progress editor:', err);
+            showToast('Error rendering progress editor: ' + err.message, 'error');
+        }
+
+        const fileType = isProgressSave ? 'Progress' : 'Run';
+        showToast(`Loaded ${fileType} file: ${saveManager.filename}`, 'success');
+    } catch (err) {
+        console.error('Error processing file:', err);
+        showToast('Error processing file: ' + err.message, 'error');
     }
-
-    // Save info bar
-    const runMins = Math.floor(info.run_time / 60);
-    const runSecs = info.run_time % 60;
-    const actName = info.current_act_id.replace('ACT.', '').replace(/_/g, ' ');
-
-    saveInfoEl.innerHTML = `
-        <div class="info-item"><span class="info-label">Seed:</span> <span class="info-value">${info.seed}</span></div>
-        <div class="info-item"><span class="info-label">Ascension:</span> <span class="info-value">${info.ascension}</span></div>
-        <div class="info-item"><span class="info-label">Act:</span> <span class="info-value">${actName}</span></div>
-        <div class="info-item"><span class="info-label">Run Time:</span> <span class="info-value">${runMins}m ${runSecs}s</span></div>
-        <div class="info-item"><span class="info-label">Players:</span> <span class="info-value">${info.player_count}${saveManager.isMultiplayer() ? ' (Multiplayer)' : ' (Solo)'}</span></div>
-    `;
-
-    // Update UI
-    fileStatus.textContent = saveManager.filename;
-    uploadArea.classList.add('hidden');
-    editorMain.classList.remove('hidden');
-    downloadBtn.disabled = false;
-
-    // Render player editor
-    playerEditor = new PlayerEditor(saveManager);
-    playerEditor.render();
-
-    showToast(`Loaded ${saveManager.filename} (${info.player_count} player${info.player_count > 1 ? 's' : ''})`, 'success');
 }
 
 function handleDownload() {

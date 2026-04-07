@@ -6,6 +6,7 @@ export function formatDescription(text) {
         .replace(/\[green\](.*?)\[\/green\]/g, '<span class="sts-green">$1</span>')
         .replace(/\[red\](.*?)\[\/red\]/g, '<span class="sts-red">$1</span>')
         .replace(/\[pink\](.*?)\[\/pink\]/g, '<span class="sts-pink">$1</span>')
+        .replace(/\[sine\](.*?)\[\/sine\]/g, '<span class="sts-sine">$1</span>')
         .replace(/\[i\](.*?)\[\/i\]/g, '<em>$1</em>')
         .replace(/\[energy:([^\]]+)\]/g, '<span class="sts-energy">$1E</span>')
         .replace(/\[star:([^\]]+)\]/g, '<span class="sts-star">$1*</span>')

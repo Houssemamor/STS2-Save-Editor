@@ -27,7 +27,7 @@ class SaveManager {
     }
 
     getPlayerCount() {
-        return this.workingSave ? this.workingSave.players.length : 0;
+        return this.workingSave && this.workingSave.players ? this.workingSave.players.length : 0;
     }
 
     getPlayer(index) {
@@ -41,6 +41,8 @@ class SaveManager {
     getSaveInfo() {
         if (!this.workingSave) return null;
         const s = this.workingSave;
+        const isProgressSave = !s.players;
+        
         return {
             schema_version: s.schema_version,
             seed: s.rng?.seed || 'Unknown',
@@ -48,7 +50,8 @@ class SaveManager {
             current_act_index: s.current_act_index ?? 0,
             current_act_id: s.acts?.[s.current_act_index]?.id || 'Unknown',
             run_time: s.run_time ?? 0,
-            player_count: s.players.length
+            player_count: isProgressSave ? 0 : (s.players?.length || 0),
+            is_progress_save: isProgressSave
         };
     }
 
@@ -64,6 +67,9 @@ class SaveManager {
     validate() {
         const warnings = [];
         if (!this.workingSave) return warnings;
+        
+        // Skip validation for progress files
+        if (!this.workingSave.players) return warnings;
 
         for (let i = 0; i < this.workingSave.players.length; i++) {
             const p = this.workingSave.players[i];
@@ -157,6 +163,50 @@ class SaveManager {
         const player = this.getPlayer(playerIndex);
         if (player) {
             player.base_orb_slot_count = Math.max(0, count);
+        }
+    }
+
+    getProgress() {
+        if (!this.workingSave) return null;
+        
+        // The progress.save file has progress data at the top level,
+        // but we need to check both workingSave root and look for a progress property
+        // In this case, workingSave itself IS the progress data
+        return this.workingSave;
+    }
+
+    setProgressField(field, value) {
+        if (this.workingSave) {
+            this.workingSave[field] = value;
+        }
+    }
+
+    setCharacterStat(characterIndex, field, value) {
+        const progress = this.getProgress();
+        if (progress && progress.character_stats && progress.character_stats[characterIndex]) {
+            progress.character_stats[characterIndex][field] = value;
+        }
+    }
+
+    setCardStat(cardIndex, field, value) {
+        const progress = this.getProgress();
+        if (progress && progress.card_stats && progress.card_stats[cardIndex]) {
+            progress.card_stats[cardIndex][field] = value;
+        }
+    }
+
+    setEnemyFightStat(enemyIndex, fightIndex, field, value) {
+        const progress = this.getProgress();
+        if (progress && progress.enemy_stats && progress.enemy_stats[enemyIndex] &&
+            progress.enemy_stats[enemyIndex].fight_stats && progress.enemy_stats[enemyIndex].fight_stats[fightIndex]) {
+            progress.enemy_stats[enemyIndex].fight_stats[fightIndex][field] = value;
+        }
+    }
+
+    setEpochField(epochIndex, field, value) {
+        const progress = this.getProgress();
+        if (progress && progress.epochs && progress.epochs[epochIndex]) {
+            progress.epochs[epochIndex][field] = value;
         }
     }
 }
